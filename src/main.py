@@ -2,8 +2,7 @@
 from process_data import *
 
 # Get today's date in format <year-month-day>
-# todays_date = datetime.now().strftime("%Y-%m-%d")
-todays_date = "2022-11-18"
+todays_date = datetime.now().strftime("%Y-%m-%d")
 
 filename = "data/raw/graph_metrics_" + todays_date + ".json.tar.gz"
 
