@@ -56,7 +56,7 @@ def load_basic_stats(filename):
 
     return network_basic_stats
 
-def add_new_stats(df, todays_date):
+def add_new_network_stats(df, todays_date):
     """
     Saves new stats into csv file
 
