@@ -56,7 +56,7 @@ def load_basic_stats(filename):
 
     return network_basic_stats
 
-def add_new_stats(df, todays_date):
+def add_new_network_stats(df, todays_date):
     """
     Saves new stats into csv file
 
@@ -76,3 +76,35 @@ def add_new_stats(df, todays_date):
     df.loc[len_df] = network_data_td
 
     df.to_csv("data/processed/basic_stats/network_basic_stats.csv")
+
+def save_routing_nodes_stats(filename_1, filename_2, todays_date):
+    """
+    Reads graph and updates routing nodes stats
+
+    filename_1: network graph csv file
+    filename_2: routing nodes stats csv file 
+    """
+
+    ln_graph = pd.read_csv(filename_1, index_col=0)
+    routing_nodes = ln_graph[(ln_graph['total_capacity'] > 1) & (ln_graph['num_channels'] > 10)]
+    rn_stats = (routing_nodes.shape[0], # number of routing nodes
+            routing_nodes['total_capacity'].sum() , # total capacity
+            routing_nodes['num_channels'].sum() , todays_date) # total number of channels
+    
+    last_ix = ln_graph.shape[0] # for placing todays data in the dataframe
+
+    routing_nodes_stats = pd.read_csv(
+        filename_2,
+        index_col = 0
+    )
+
+    # drop duplicates in case they are
+    routing_nodes_stats.drop_duplicates(subset='date', keep='first', inplace=True)
+    # add today's network stats
+    len_df = routing_nodes_stats.shape[0]
+    routing_nodes_stats.loc[len_df] = rn_stats
+
+    # save new stats to the same csv file
+    routing_nodes_stats.to_csv(filename_2)
+
+
