@@ -107,4 +107,28 @@ def save_routing_nodes_stats(filename_1, filename_2, todays_date):
     # save new stats to the same csv file
     routing_nodes_stats.to_csv(filename_2)
 
+def save_big_nodes_stats(filename_1, filename_2, todays_date):
+    """
+    Reads graph and updates big nodes stats csv file
+
+    filename_1: network graph
+    filename_2: big nodes stats csv
+    """
+
+    ln_graph = pd.read_csv(filename_1, index_col=0)
+    # Industrial size nodes: > 40 BTC
+    big_nodes = ln_graph[(ln_graph['total_capacity'] > 40)]
+    n_chans, t_cap = big_nodes.iloc[:, -2:].sum() 
+    # Stats to save
+    stats = big_nodes.shape[0], n_chans, t_cap, todays_date
+    # Read big nodes stats csv file
+    big_nodes_stats = pd.read_csv(filename_2, index_col=0)
+    # index to append new stats
+    sh = big_nodes_stats.shape[0]
+    # append new stats
+    big_nodes_stats.loc[sh, :] = stats
+    # Save stats
+    big_nodes_stats.to_csv(filename_2)
+
+
 
