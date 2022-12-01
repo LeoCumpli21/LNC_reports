@@ -4,36 +4,36 @@ from save_basic_stats import load_basic_stats, add_new_network_stats, save_routi
 
 # Get today's date in format <year-month-day>
 todays_date = datetime.now().strftime("%Y-%m-%d")
-todays_date = "2022-11-18"
+# todays_date = "2022-11-18"
 
-# filename = "data/raw/graph_metrics_" + todays_date + ".json.tar.gz"
+filename = "data/raw/graph_metrics_" + todays_date + ".json.tar.gz"
 
-# # Read graph file
-# graph_json = decompress_network_graph(filename)
+# Read graph file
+graph_json = decompress_network_graph(filename)
 
-# # Get nodes and channels graphs
-# nodes_graph, channels_graph = to_pandas_df(graph_json)
+# Get nodes and channels graphs
+nodes_graph, channels_graph = to_pandas_df(graph_json)
 
-# # Combine channels graph with nodes graph
-# ln_graph = add_node_chan_info(nodes_graph, channels_graph)
+# Combine channels graph with nodes graph
+ln_graph = add_node_chan_info(nodes_graph, channels_graph)
 
-# # Drop unnecessary columns
-# ln_graph = ln_graph.drop([
-#     col for col in ln_graph.columns if 'features' in col
-#     ], axis=1)
+# Drop unnecessary columns
+ln_graph = ln_graph.drop([
+    col for col in ln_graph.columns if 'features' in col
+    ], axis=1)
 
-# # Change capacity units to btc
-# ln_graph = to_btc_units(ln_graph)
+# Change capacity units to btc
+ln_graph = to_btc_units(ln_graph)
 
-# # Save graph into csv file in data/processed/... folder
-# dir = "data/processed/graphs"
-# ln_graph.to_csv(f"{dir}/network_graph_{todays_date}.csv")
+# Save graph into csv file in data/processed/... folder
+dir = "data/processed/graphs"
+ln_graph.to_csv(f"{dir}/network_graph_{todays_date}.csv")
 
-# # Load basic stats csv
-# net_stats_filename = "data/processed/basic_stats/network_basic_stats.csv"
-# network_basic_stats = load_basic_stats(net_stats_filename)
-# # Save new basic stats
-# add_new_network_stats(network_basic_stats, todays_date)
+# Load basic stats csv
+net_stats_filename = "data/processed/basic_stats/network_basic_stats.csv"
+network_basic_stats = load_basic_stats(net_stats_filename)
+# Save new basic stats
+add_new_network_stats(network_basic_stats, todays_date)
 
 # network's csv graph file
 net_csv = "data/processed/graphs/network_graph_" + todays_date + ".csv"
