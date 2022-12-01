@@ -24,5 +24,5 @@ ln_graph = ln_graph.drop([
 ln_graph = to_btc_units(ln_graph)
 
 # Save graph into csv file in data/processed/... folder
-dir = "data/processed"
+dir = "data/processed/graphs"
 ln_graph.to_csv(f"{dir}/network_graph_{todays_date}.csv")
