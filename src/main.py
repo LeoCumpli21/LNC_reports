@@ -4,6 +4,7 @@ from save_basic_stats import add_new_network_stats, save_routing_nodes_stats
 from save_basic_stats import save_big_nodes_stats
 from save_basic_stats import load_network_basic_stats, load_big_nodes_stats, load_routing_nodes_stats
 from generate_chart_routing_vs_network_nodes import *
+from generate_chart_total_stats import plot_net_statistics
 
 # Get today's date in format <year-month-day>
 todays_date = datetime.now().strftime("%Y-%m-%d")
@@ -73,9 +74,23 @@ t_d, date_28_ago = get_time(todays_date)
 # Create figure
 f = plt.figure(figsize=(16, 9))
 # plot 
-plot_net_statistics(f, data1, data2, 'routing_nodes', 'total_nodes', t_d, date_28_ago)
+plot_routing_vs_net_statistics(f, data1, data2, 'routing_nodes', 'total_nodes', t_d, date_28_ago)
 # Save figure to charts folder
 f.savefig(
   f'charts/routing_vs_net_nodes/routing_nodes_stats_{todays_date}_num_nodes.png',
   facecolor="#033048"
 )
+
+### Network basic stats charts
+# Features to plot
+features = ['total_channels', 'total_capacity', 'total_nodes']
+
+for f in features:
+  # Creates figure
+  fig = plt.figure(figsize=(16, 9))
+  plot_net_statistics(fig, data2, f, t_d, date_28_ago)
+  # figures.append(bar)
+  fig.savefig(
+      f'charts/total_stats/network_stats_{todays_date}_{f}.png',
+      facecolor="#033048"
+    )
