@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import matplotlib as mpl
 import matplotlib.gridspec as gridspec
-import matplotlib.image as mimage
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
