@@ -1,17 +1,21 @@
-
 from process_data import *
 from save_basic_stats import add_new_network_stats, save_routing_nodes_stats
 from save_basic_stats import save_big_nodes_stats
-from save_basic_stats import load_network_basic_stats, load_big_nodes_stats, load_routing_nodes_stats
+from save_basic_stats import (
+    load_network_basic_stats,
+    load_big_nodes_stats,
+    load_routing_nodes_stats,
+)
 from generate_chart_routing_vs_network_nodes import *
 from generate_chart_total_stats import plot_net_statistics
 from generate_chart_average_stats import plot_med_statistics
 from generate_chart_big_nodes_categories_pie import *
 from generate_chart_networks_capacity_distr import *
+from generate_chart_nodes_categories import *
 
 # Get today's date in format <year-month-day>
 todays_date = datetime.now().strftime("%Y-%m-%d")
-todays_date = "2022-11-18" ### THIS IS JUST FOR TESTING 
+todays_date = "2022-11-18"  ### THIS IS JUST FOR TESTING
 
 # filename = "data/raw/graph_metrics_" + todays_date + ".json.tar.gz"
 
@@ -43,7 +47,7 @@ network_basic_stats = load_network_basic_stats(net_stats_filename)
 # Save new basic stats
 # add_new_network_stats(network_basic_stats, todays_date)
 
-#### Stats of ROUTING NODES 
+#### Stats of ROUTING NODES
 # network's csv graph file
 net_csv = "data/processed/graphs/network_graph_" + todays_date + ".csv"
 # routing nodes stats csv file
@@ -58,7 +62,7 @@ big_stats_file = "data/processed/basic_stats/big_nodes_stats.csv"
 
 ### CREATING CHARTS ###
 
-### Routing vs network nodes chart 
+### Routing vs network nodes chart
 network_basic_stats = load_network_basic_stats(net_stats_filename)
 routing_nodes_stats = load_routing_nodes_stats(routing_stats_file)
 big_nodes_stats = load_big_nodes_stats(big_stats_file)
@@ -68,17 +72,17 @@ network_basic_stats = cast_df_date(network_basic_stats)
 routing_nodes_stats = cast_df_date(routing_nodes_stats)
 big_nodes_stats = cast_df_date(big_nodes_stats)
 
-data1 = routing_nodes_stats.set_index('date', drop=False)
-data2 = network_basic_stats.set_index('date', drop=False)
+data1 = routing_nodes_stats.set_index("date", drop=False)
+data2 = network_basic_stats.set_index("date", drop=False)
 
 # get todays date and date 28 days ago
 t_d, date_28_ago = get_time(todays_date)
 
 # # Create figure
 # f = plt.figure(figsize=(16, 9))
-# # plot 
+# # plot
 # plot_routing_vs_net_statistics(
-#     f, data1, data2, 'routing_nodes', 
+#     f, data1, data2, 'routing_nodes',
 #     'total_nodes', t_d, date_28_ago
 # )
 # # Save figure to charts folder
@@ -105,7 +109,7 @@ t_d, date_28_ago = get_time(todays_date)
 # f = plt.figure(figsize=(16, 9))
 # # Network basic statistics -> data2
 # plot_net_statistics(
-#     f, data2[["date", "avg_node_capacity"]], 
+#     f, data2[["date", "avg_node_capacity"]],
 #     'avg_node_capacity', t_d, date_28_ago
 # )
 # # Save chart
@@ -119,11 +123,11 @@ t_d, date_28_ago = get_time(todays_date)
 # # Network basic stats : data2
 # # average channel size
 # plot_med_statistics(
-#     f, 
-#     data2[['date', 'avg_channel_size', 'median_channel_size']], 
+#     f,
+#     data2[['date', 'avg_channel_size', 'median_channel_size']],
 #     'avg_channel_size', t_d, date_28_ago
 # )
-# # Save chart 
+# # Save chart
 # f.savefig(
 #     f'charts/average_stats/avg_chan_size_{todays_date}.png',
 #         facecolor="#033048"
@@ -132,7 +136,9 @@ t_d, date_28_ago = get_time(todays_date)
 ### Pie charts
 # Big nodes categories distribution pie chart
 # load big nodes description
-big_nodes = pd.read_csv('data/processed/basic_stats/big_nodes_desc.csv', index_col=0)
+big_nodes = pd.read_csv(
+    "data/processed/basic_stats/big_nodes_desc.csv", index_col=0
+)
 # Clean big nodes df, and get industrial nodes only (exlcuding routing nodes)
 big_nodes, industrial_nodes = clean_big_nodes(big_nodes)
 # Get big nodes categories distribution
@@ -143,8 +149,7 @@ f = plt.figure(figsize=(16, 9))
 plot_big_nodes_distribution(f, categories_distr)
 # Save chart
 f.savefig(
-    f'charts/pie_charts/big_nodes_pie_{todays_date}.png',
-    facecolor="#033048"
+    f"charts/pie_charts/big_nodes_pie_{todays_date}.png", facecolor="#033048"
 )
 
 # Network's capacity distribution pie chart
@@ -158,6 +163,21 @@ f = plt.figure(figsize=(16, 9))
 plot_capacities_pie(f, ln_total_cap, rn_total_cap, big_total_cap)
 # Save figure
 f.savefig(
-    f'charts/pie_charts/capacity_distribution_{todays_date}.png',
-    facecolor="#033048"
+    f"charts/pie_charts/capacity_distribution_{todays_date}.png",
+    facecolor="#033048",
+)
+
+# Nodes categories pie chart
+# get number of nodes of each category
+rn_count, rest_count, big_count = get_nodes_count(
+    network_basic_stats, routing_nodes_stats, big_nodes_stats
+)
+# Create figure
+f = plt.figure(figsize=(16, 9))
+# Plot chart
+plot_nodes_categories(f, rn_count, rest_count, big_count)
+# Save figure
+f.savefig(
+    f"charts/pie_charts/share_nodes_pie_{todays_date}.png",
+    facecolor="#033048",
 )
