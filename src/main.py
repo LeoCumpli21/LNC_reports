@@ -7,6 +7,7 @@ from generate_chart_routing_vs_network_nodes import *
 from generate_chart_total_stats import plot_net_statistics
 from generate_chart_average_stats import plot_med_statistics
 from generate_chart_big_nodes_categories_pie import *
+from generate_chart_networks_capacity_distr import *
 
 # Get today's date in format <year-month-day>
 todays_date = datetime.now().strftime("%Y-%m-%d")
@@ -142,5 +143,21 @@ f = plt.figure(figsize=(16, 9))
 plot_big_nodes_distribution(f, categories_distr)
 # Save chart
 f.savefig(
-    f'charts/pie_charts/big_nodes_pie_{todays_date}.png'
+    f'charts/pie_charts/big_nodes_pie_{todays_date}.png',
+    facecolor="#033048"
+)
+
+# Network's capacity distribution pie chart
+# get nodes capacities
+ln_total_cap, rn_total_cap, big_total_cap = get_capacities(
+    network_basic_stats, routing_nodes_stats, big_nodes_stats, big_nodes
+)
+# Create figure
+f = plt.figure(figsize=(16, 9))
+# plot pie chart
+plot_capacities_pie(f, ln_total_cap, rn_total_cap, big_total_cap)
+# Save figure
+f.savefig(
+    f'charts/pie_charts/capacity_distribution_{todays_date}.png',
+    facecolor="#033048"
 )
