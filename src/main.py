@@ -12,10 +12,11 @@ from generate_chart_average_stats import plot_med_statistics
 from generate_chart_big_nodes_categories_pie import *
 from generate_chart_networks_capacity_distr import *
 from generate_chart_nodes_categories import *
+from generate_chart_stacked_area import *
 
 # Get today's date in format <year-month-day>
 todays_date = datetime.now().strftime("%Y-%m-%d")
-todays_date = "2022-11-18"  ### THIS IS JUST FOR TESTING
+todays_date = "2022-12-05"  ### THIS IS JUST FOR TESTING
 
 # filename = "data/raw/graph_metrics_" + todays_date + ".json.tar.gz"
 
@@ -179,5 +180,26 @@ plot_nodes_categories(f, rn_count, rest_count, big_count)
 # Save figure
 f.savefig(
     f"charts/pie_charts/share_nodes_pie_{todays_date}.png",
+    facecolor="#033048",
+)
+
+### AREA CHART
+# Get big routing nodes accumulated capacity from 28 days
+# ago until now
+big_rn_capacities = get_big_routing_nodes_data(big_nodes, date_28_ago)
+# get accumulated capacity of routing nodes, big nodes and the rest
+x, y_1, y_2, y_3 = get_nodes_capacities(
+    data2,
+    data1,
+    big_nodes_stats.set_index("date", drop=False),
+    date_28_ago,
+    big_rn_capacities,
+)
+# Create figure
+f = plt.figure(figsize=(16, 9))
+# Plot area chart
+plot_area_capacities_chart(f, x, y_1, y_2, y_3)
+f.savefig(
+    f"charts/area_charts/stacked_area_chart_{todays_date}.png",
     facecolor="#033048",
 )
