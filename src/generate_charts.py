@@ -17,7 +17,7 @@ def get_time(todays_date):
     t_d = datetime.strptime(todays_date, '%Y-%m-%d') ### THIS IS JUST FOR TESTING
     ### AND SHOULD BE CLEARED OUT LATER
     # 4 weeks ago
-    date_28_days_ago = (t_d - timedelta(days = 28))
+    date_28_days_ago = (t_d - timedelta(days = 27))
 
     return t_d, date_28_days_ago
 
