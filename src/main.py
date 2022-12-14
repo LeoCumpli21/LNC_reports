@@ -19,8 +19,6 @@ import sys
 
 def check_invalid_date(date_string: str) -> bool:
 
-    if date_string is None:
-        return False
     try:
         datetime.strptime(date_string, "%Y-%m-%d")
         return False
@@ -32,8 +30,7 @@ def ask_for_dates() -> str:
 
     msg = """
     Enter a date in the following format:
-        yyyy-mm-dd
-    or None if you want the current date\n\t
+        yyyy-mm-dd\n\t
     """
 
     date = input(msg)
@@ -418,29 +415,36 @@ def main():
     1. Generate charts
     2. Don't, end execution.\n\t
     """
-
+    # Ask for option
     opt = input(menu)
-    while check_invalid_choice(opt, menu=True):
-        print("Invalid option, try again")
+
+    while True:
+
+        while check_invalid_choice(opt, menu=True):
+            print("Invalid option, try again")
+            opt = input(menu)
+
+        if int(opt) == 2:
+            print("ENDING EXECUTION")
+            time.sleep(3)
+            sys.exit(0)
+
+        print("Alright\n")
+        # CHOSE A CHART
+        chosen_chart = ask_for_chart()
+        # CHOOSE DATES
+        print("Choose from when you want your chart to start")
+        starting_d = ask_for_dates()
+        print("Now choose the limit of your chart (could be today)")
+        ending_d = ask_for_dates()
+        # get todays date and date 28 days ago
+        start, end = get_time(starting_d), get_time(ending_d)
+
+        generate_chosen_chart(chosen_chart, start, end)
+        print("\nCharts generated successfuly!\n")
+        time.sleep(2)
+
         opt = input(menu)
-
-    if int(opt) == 2:
-        print("ENDING EXECUTION")
-        time.sleep(3)
-        sys.exit(0)
-
-    print("Alright\n")
-    # CHOSE A CHART
-    chosen_chart = ask_for_chart()
-    # CHOOSE DATES
-    print("Time to choose from when you want your chart to start")
-    starting_d = ask_for_dates()
-    print("Now choose the limit of your chart (could be today)")
-    ending_d = ask_for_dates()
-    # get todays date and date 28 days ago
-    start, end = get_time(starting_d), get_time(ending_d)
-
-    generate_chosen_chart(chosen_chart, start)
 
 
 main()
