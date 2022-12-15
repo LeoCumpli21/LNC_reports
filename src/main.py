@@ -26,7 +26,7 @@ def check_invalid_date(date_string: str) -> bool:
         return True
 
 
-def ask_for_dates() -> str:
+def ask_for_date() -> str:
 
     msg = """
     Enter a date in the following format:
@@ -39,6 +39,23 @@ def ask_for_dates() -> str:
         date = input(msg)
 
     return date
+
+
+def ask_for_pair_of_dates():
+
+    print("Choose from when you want your chart to start")
+    starting_d = ask_for_date()
+    print("\nNow choose the limit of your chart (could be today)")
+    ending_d = ask_for_date()
+    # get todays date and date 28 days ago
+    start, end = get_time(starting_d), get_time(ending_d)
+
+    return start, end
+
+
+def validate_pair_of_dates(date_1, date_2) -> bool:
+
+    return (date_2 - date_1).days >= 7
 
 
 def check_invalid_choice(choice, menu=False) -> bool:
@@ -84,27 +101,33 @@ def generate_chosen_chart(
     start: str,
     end=datetime.strptime(datetime.now().strftime("%Y-%m-%d"), "%Y-%m-%d"),
 ):
-
-    if choice == 1:
+    f = None  # figure to show
+    if choice == 1:  # TOTAL STATS CHARTS
         features = ["total_channels", "total_capacity", "total_nodes"]
 
-        for f in features:
+        for fe in features:
             # Creates figure
-            fig = plt.figure(figsize=(16, 9))
+            f = plt.figure(figsize=(16, 9))
             # Plot
-            plot_net_statistics(fig, data2, f, end, start)
+            plot_net_statistics(f, network_basic_stats, fe, end, start)
             # Save figure
-            fig.savefig(
-                f"charts/total_stats/network_stats_{todays_date}_{f}.png",
+            f.savefig(
+                f"charts/total_stats/network_stats_{todays_date}_{fe}.png",
                 facecolor="#033048",
             )
 
-    elif choice == 2:
+    elif choice == 2:  # ROUTING VS TOTAL CHART
         # Create figure
         f = plt.figure(figsize=(16, 9))
         # Plot
         plot_routing_vs_net_statistics(
-            f, data1, data2, "routing_nodes", "total_nodes", end, start
+            f,
+            routing_nodes_stats,
+            network_basic_stats,
+            "routing_nodes",
+            "total_nodes",
+            end,
+            start,
         )
         # Save figure to charts folder
         f.savefig(
@@ -112,7 +135,7 @@ def generate_chosen_chart(
             facecolor="#033048",
         )
 
-    elif choice == 3:
+    elif choice == 3:  # PIE CHARTS
 
         # Big nodes categories distribution pie chart
         # load big nodes description
@@ -136,7 +159,11 @@ def generate_chosen_chart(
         # Network's capacity distribution pie chart
         # get nodes capacities
         ln_total_cap, rn_total_cap, big_total_cap = get_capacities(
-            network_basic_stats, routing_nodes_stats, big_nodes_stats, big_nodes
+            network_basic_stats,
+            routing_nodes_stats,
+            big_nodes_stats,
+            big_nodes,
+            date=end,
         )
         # Create figure
         f = plt.figure(figsize=(16, 9))
@@ -151,7 +178,7 @@ def generate_chosen_chart(
         # Nodes categories pie chart
         # get number of nodes of each category
         rn_count, rest_count, big_count = get_nodes_count(
-            network_basic_stats, routing_nodes_stats, big_nodes_stats
+            network_basic_stats, routing_nodes_stats, big_nodes_stats, date=end
         )
         # Create figure
         f = plt.figure(figsize=(16, 9))
@@ -163,13 +190,13 @@ def generate_chosen_chart(
             facecolor="#033048",
         )
 
-    elif choice == 4:
+    elif choice == 4:  # AVERAGE CHARTS
         # For average node capacity
         f = plt.figure(figsize=(16, 9))
-        # Network basic statistics -> data2
+        # Network basic statistics -> network_basic_stats
         plot_net_statistics(
             f,
-            data2[["date", "avg_node_capacity"]],
+            network_basic_stats[["date", "avg_node_capacity"]],
             "avg_node_capacity",
             end,
             start,
@@ -182,11 +209,13 @@ def generate_chosen_chart(
 
         # For average channel size
         f = plt.figure(figsize=(16, 9))
-        # Network basic stats : data2
+        # Network basic stats : network_basic_stats
         # average channel size
         plot_med_statistics(
             f,
-            data2[["date", "avg_channel_size", "median_channel_size"]],
+            network_basic_stats[
+                ["date", "avg_channel_size", "median_channel_size"]
+            ],
             "avg_channel_size",
             end,
             start,
@@ -197,8 +226,32 @@ def generate_chosen_chart(
             facecolor="#033048",
         )
 
-    else:
-        print("NOT YET IMPLEMENTED")
+    else:  # STACKED AREA CHART
+        # Get big routing nodes accumulated capacity from 28 days
+        # ago until recent
+        # load big nodes description
+        big_nodes = pd.read_csv(
+            "data/processed/basic_stats/big_nodes_desc.csv", index_col=0
+        )
+        big_nodes, _ = clean_big_nodes(big_nodes)
+        big_rn_capacities = get_big_routing_nodes_data(big_nodes, start, end)
+        # get accumulated capacity of routing nodes, big nodes and the rest
+        x, y_1, y_2, y_3 = get_nodes_capacities(
+            network_basic_stats,
+            routing_nodes_stats,
+            big_nodes_stats.set_index("date", drop=False),
+            start,
+            end,
+            big_rn_capacities,
+        )
+        # Create figure
+        f = plt.figure(figsize=(16, 9))
+        # Plot area chart
+        plot_area_capacities_chart(f, x, y_1, y_2, y_3)
+        f.savefig(
+            f"charts/area_charts/stacked_area_chart_{todays_date}.png",
+            facecolor="#033048",
+        )
 
 
 # Get today's date in format <year-month-day>
@@ -260,139 +313,9 @@ network_basic_stats = cast_df_date(network_basic_stats)
 routing_nodes_stats = cast_df_date(routing_nodes_stats)
 big_nodes_stats = cast_df_date(big_nodes_stats)
 
-data1 = routing_nodes_stats.set_index("date", drop=False)
-data2 = network_basic_stats.set_index("date", drop=False)
-
-# get todays date and date 28 days ago
-# t_d, date_28_ago = get_time(todays_date)
-
-# # Create figure
-# f = plt.figure(figsize=(16, 9))
-# # plot
-# plot_routing_vs_net_statistics(
-#     f, data1, data2, "routing_nodes", "total_nodes", t_d, date_28_ago
-# )
-# # Save figure to charts folder
-# f.savefig(
-#     f"charts/routing_vs_net_nodes/routing_nodes_stats_{todays_date}_num_nodes.png",
-#     facecolor="#033048",
-# )
-
-# ### Network basic stats charts
-# # Features to plot
-# features = ["total_channels", "total_capacity", "total_nodes"]
-
-# for f in features:
-#     # Creates figure
-#     fig = plt.figure(figsize=(16, 9))
-#     plot_net_statistics(fig, data2, f, t_d, date_28_ago)
-#     # figures.append(bar)
-#     fig.savefig(
-#         f"charts/total_stats/network_stats_{todays_date}_{f}.png",
-#         facecolor="#033048",
-#     )
-
-# # For average node capacity
-# f = plt.figure(figsize=(16, 9))
-# # Network basic statistics -> data2
-# plot_net_statistics(
-#     f,
-#     data2[["date", "avg_node_capacity"]],
-#     "avg_node_capacity",
-#     t_d,
-#     date_28_ago,
-# )
-# # Save chart
-# f.savefig(
-#     f"charts/average_stats/avg_node_capacity_{todays_date}.png",
-#     facecolor="#033048",
-# )
-
-# ### Average stats chart
-# f = plt.figure(figsize=(16, 9))
-# # Network basic stats : data2
-# # average channel size
-# plot_med_statistics(
-#     f,
-#     data2[["date", "avg_channel_size", "median_channel_size"]],
-#     "avg_channel_size",
-#     t_d,
-#     date_28_ago,
-# )
-# # Save chart
-# f.savefig(
-#     f"charts/average_stats/avg_chan_size_{todays_date}.png", facecolor="#033048"
-# )
-
-# ### Pie charts
-# # Big nodes categories distribution pie chart
-# # load big nodes description
-# big_nodes = pd.read_csv(
-#     "data/processed/basic_stats/big_nodes_desc.csv", index_col=0
-# )
-# # Clean big nodes df, and get industrial nodes only (exlcuding routing nodes)
-# big_nodes, industrial_nodes = clean_big_nodes(big_nodes)
-# # Get big nodes categories distribution
-# categories_distr = get_big_nodes_distribution(industrial_nodes)
-# # create figure
-# f = plt.figure(figsize=(16, 9))
-# # Plot pie chart
-# plot_big_nodes_distribution(f, categories_distr)
-# # Save chart
-# f.savefig(
-#     f"charts/pie_charts/big_nodes_pie_{todays_date}.png", facecolor="#033048"
-# )
-
-# # Network's capacity distribution pie chart
-# # get nodes capacities
-# ln_total_cap, rn_total_cap, big_total_cap = get_capacities(
-#     network_basic_stats, routing_nodes_stats, big_nodes_stats, big_nodes
-# )
-# # Create figure
-# f = plt.figure(figsize=(16, 9))
-# # plot pie chart
-# plot_capacities_pie(f, ln_total_cap, rn_total_cap, big_total_cap)
-# # Save figure
-# f.savefig(
-#     f"charts/pie_charts/capacity_distribution_{todays_date}.png",
-#     facecolor="#033048",
-# )
-
-# # Nodes categories pie chart
-# # get number of nodes of each category
-# rn_count, rest_count, big_count = get_nodes_count(
-#     network_basic_stats, routing_nodes_stats, big_nodes_stats
-# )
-# # Create figure
-# f = plt.figure(figsize=(16, 9))
-# # Plot chart
-# plot_nodes_categories(f, rn_count, rest_count, big_count)
-# # Save figure
-# f.savefig(
-#     f"charts/pie_charts/share_nodes_pie_{todays_date}.png",
-#     facecolor="#033048",
-# )
-
-# ### AREA CHART
-# # Get big routing nodes accumulated capacity from 28 days
-# # ago until now
-# big_rn_capacities = get_big_routing_nodes_data(big_nodes, date_28_ago)
-# # get accumulated capacity of routing nodes, big nodes and the rest
-# x, y_1, y_2, y_3 = get_nodes_capacities(
-#     data2,
-#     data1,
-#     big_nodes_stats.set_index("date", drop=False),
-#     date_28_ago,
-#     big_rn_capacities,
-# )
-# # Create figure
-# f = plt.figure(figsize=(16, 9))
-# # Plot area chart
-# plot_area_capacities_chart(f, x, y_1, y_2, y_3)
-# f.savefig(
-#     f"charts/area_charts/stacked_area_chart_{todays_date}.png",
-#     facecolor="#033048",
-# )
+routing_nodes_stats = routing_nodes_stats.set_index("date", drop=False)
+network_basic_stats = network_basic_stats.set_index("date", drop=False)
+big_nodes_stats = big_nodes_stats.set_index("date", drop=False)
 
 
 def main():
@@ -417,6 +340,7 @@ def main():
     """
     # Ask for option
     opt = input(menu)
+    dates = list()  # Empty list
 
     while True:
 
@@ -432,15 +356,23 @@ def main():
         print("Alright\n")
         # CHOSE A CHART
         chosen_chart = ask_for_chart()
+        # if chosen chart is pie chart, then only one date needed
+        if chosen_chart == 3:
+            d = ask_for_date()  # Ask only for one date
+            dates.append("some date")
+            dates.append(d)
         # CHOOSE DATES
-        print("Choose from when you want your chart to start")
-        starting_d = ask_for_dates()
-        print("Now choose the limit of your chart (could be today)")
-        ending_d = ask_for_dates()
-        # get todays date and date 28 days ago
-        start, end = get_time(starting_d), get_time(ending_d)
+        if len(dates) == 0:  # if dates is empty
+            start, end = ask_for_pair_of_dates()
 
-        generate_chosen_chart(chosen_chart, start, end)
+            while not validate_pair_of_dates(start, end):
+                print("\nDates difference should be at least of 7 days\n")
+                start, end = ask_for_pair_of_dates()
+
+            dates.append(start)
+            dates.append(end)
+
+        generate_chosen_chart(chosen_chart, dates[0], dates[1])
         print("\nCharts generated successfuly!\n")
         time.sleep(2)
 
