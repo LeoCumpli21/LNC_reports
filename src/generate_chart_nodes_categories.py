@@ -1,7 +1,7 @@
 from generate_charts import *
 
 
-def get_nodes_count(network_stats, rn_stats, big_stats):
+def get_nodes_count(network_stats, rn_stats, big_stats, date):
     """
     network_stats: network basic stats dataframe
     rn_stats: routing nodes stats dataframe
@@ -10,10 +10,10 @@ def get_nodes_count(network_stats, rn_stats, big_stats):
     """
 
     # Number of routing nodes
-    num_r_nodes = (rn_stats.routing_nodes - big_stats.num_nodes).iloc[-1]
+    num_r_nodes = (rn_stats.routing_nodes - big_stats.num_nodes).loc[date]
     # Total nodes in network
-    total_n = network_stats.total_nodes.iloc[-1]
-    num_big = big_stats.num_nodes.iloc[-1]
+    total_n = network_stats.total_nodes.loc[date]
+    num_big = big_stats.num_nodes.loc[date]
     # rest of nodes
     num_rest_nodes = total_n - num_r_nodes - num_big
 

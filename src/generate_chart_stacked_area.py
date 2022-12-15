@@ -1,10 +1,11 @@
 from generate_charts import *
 
 
-def get_big_routing_nodes_data(big_nodes, date):
+def get_big_routing_nodes_data(big_nodes, date_ago, recent_date):
     """
     big_nodes: cleaned big nodes dataframe
-    date: date 28 days ago
+    date_ago: starting date
+    recent_date: ending date
 
     returns a list with the big routing nodes accumulated capacity
     in chronological order
@@ -15,20 +16,21 @@ def get_big_routing_nodes_data(big_nodes, date):
     big_rn_pk = big_rn.pub_key.values
 
     big_rn_capacities = []
-
+    recent_date += timedelta(days=1)
     # Get data of big routing nodes
-    for _ in range(28):
-        date = date.strftime("%Y-%m-%d")
+    while date_ago != recent_date:
+        # for _ in range(28):
+        date_ago = date_ago.strftime("%Y-%m-%d")
         # load networks graph
 
-        graph_file = f"data/processed/graphs/network_graph_{date}.csv"
+        graph_file = f"data/processed/graphs/network_graph_{date_ago}.csv"
 
         try:
             ln_graph = pd.read_csv(graph_file, index_col=0)
         except:
-            print(f"{date} not found")
-            date = pd.to_datetime(date)
-            date += timedelta(days=1)
+            print(f"{date_ago} not found")
+            date_ago = pd.to_datetime(date_ago)
+            date_ago += timedelta(days=1)
             continue
         # query graph for public keys
         big_rn_total_cap = ln_graph[
@@ -36,14 +38,14 @@ def get_big_routing_nodes_data(big_nodes, date):
         ].total_capacity.sum()
         big_rn_capacities.append(big_rn_total_cap)
 
-        date = pd.to_datetime(date)
-        date += timedelta(days=1)
+        date_ago = pd.to_datetime(date_ago)
+        date_ago += timedelta(days=1)
 
     return big_rn_capacities
 
 
 def get_nodes_capacities(
-    network_stats, rn_stats, big_stats, date, big_rn_capacities
+    network_stats, rn_stats, big_stats, date_ago, recent_date, big_rn_capacities
 ):
 
     """
@@ -52,7 +54,8 @@ def get_nodes_capacities(
     network_stats: network basic stats dataframe
     rn_stats: routing nodes stats dataframe
     big_stats: big nodes stats dataframe
-    date: date 28 days ago
+    date_ago: starting date
+    recent_date: ending date
     big_rn_capacities: daily accumulated capacities of the big routing nodes
         from 28 days ago till now
 
@@ -60,9 +63,9 @@ def get_nodes_capacities(
         (x, y1, y2, y3), where x are dates, and the y's are nodes capacities
     """
 
-    routing_nodes_stats = rn_stats.loc[date:]
-    big_nodes_stats = big_stats.loc[date:]
-    network_basic_stats = network_stats.loc[date:]
+    routing_nodes_stats = rn_stats.loc[date_ago:recent_date]
+    big_nodes_stats = big_stats.loc[date_ago:recent_date]
+    network_basic_stats = network_stats.loc[date_ago:recent_date]
 
     # subtracting big nodes stats from routing nodes stats, so that we
     # have stats for nodes with 1 < btc < 40
