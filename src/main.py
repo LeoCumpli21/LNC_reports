@@ -347,7 +347,7 @@ def main():
     time.sleep(3)
 
     menu = """
-    Now, choose whether to generate charts:
+    Now, choose wether to generate charts:
     1. Generate charts
     2. Don't, end execution.\n\t
     """
