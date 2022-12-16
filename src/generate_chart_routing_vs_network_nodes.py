@@ -71,8 +71,8 @@ def plot_routing_vs_net_statistics(
 
     # Plotting this weeks data
     ax.plot(
-        data1.loc[t_d - timedelta(days=7) :, "date"],  # x axis
-        data1.loc[t_d - timedelta(days=7) :, y1],  # y axis
+        data1.loc[t_d - timedelta(days=7) : t_d, "date"],  # x axis
+        data1.loc[t_d - timedelta(days=7) : t_d, y1],  # y axis
         color="#4EBEB9",
     )
 
@@ -89,8 +89,8 @@ def plot_routing_vs_net_statistics(
     ax2.yaxis.label.set_text("Count")
     # Plotting this weeks data
     ax2.plot(
-        data2.loc[t_d - timedelta(days=7) :, "date"],  # x axis
-        data2.loc[t_d - timedelta(days=7) :, y2],  # y axis
+        data2.loc[t_d - timedelta(days=7) : t_d, "date"],  # x axis
+        data2.loc[t_d - timedelta(days=7) : t_d, y2],  # y axis
         color="#4EBEB9",
     )
 

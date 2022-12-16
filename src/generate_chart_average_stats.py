@@ -62,8 +62,8 @@ def plot_med_statistics(f, data1, y1, t_d, date_28_days_ago):
     ax.yaxis.label.set_text("Channel size")
     # Plotting this weeks data
     ax.plot(
-        data1.loc[t_d - timedelta(days=7) :, "date"],  # x axis
-        data1.loc[t_d - timedelta(days=7) :, y1],  # y axis
+        data1.loc[t_d - timedelta(days=7) : t_d, "date"],  # x axis
+        data1.loc[t_d - timedelta(days=7) : t_d, y1],  # y axis
         color="#4EBEB9",
     )
 

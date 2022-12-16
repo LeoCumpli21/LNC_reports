@@ -48,8 +48,8 @@ def plot_net_statistics(f, data, y, t_d, date_28_days_ago):
     )
     # Plotting this weeks data
     ax.plot(
-        data1.loc[t_d - timedelta(days=7) :, "date"],  # x axis
-        data1.loc[t_d - timedelta(days=7) :, y],  # y axis
+        data1.loc[t_d - timedelta(days=7) : t_d, "date"],  # x axis
+        data1.loc[t_d - timedelta(days=7) : t_d, y],  # y axis
         color="#4EBEB9",
     )
 

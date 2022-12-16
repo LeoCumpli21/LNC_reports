@@ -98,8 +98,10 @@ def ask_for_chart() -> int:
 
 def generate_chosen_chart(
     choice: int,
-    start: str,
-    end=datetime.strptime(datetime.now().strftime("%Y-%m-%d"), "%Y-%m-%d"),
+    start: datetime = None,
+    end: datetime = datetime.strptime(
+        datetime.now().strftime("%Y-%m-%d"), "%Y-%m-%d"
+    ),
 ):
     f = None  # figure to show
     if choice == 1:  # TOTAL STATS CHARTS
@@ -111,29 +113,36 @@ def generate_chosen_chart(
             # Plot
             plot_net_statistics(f, network_basic_stats, fe, end, start)
             # Save figure
+            s, e = start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
             f.savefig(
-                f"charts/total_stats/network_stats_{todays_date}_{fe}.png",
+                f"charts/total_stats/network_stats_{s}_to_{e}_{fe}.png",
                 facecolor="#033048",
             )
 
     elif choice == 2:  # ROUTING VS TOTAL CHART
-        # Create figure
-        f = plt.figure(figsize=(16, 9))
-        # Plot
-        plot_routing_vs_net_statistics(
-            f,
-            routing_nodes_stats,
-            network_basic_stats,
-            "routing_nodes",
-            "total_nodes",
-            end,
-            start,
-        )
-        # Save figure to charts folder
-        f.savefig(
-            f"charts/routing_vs_net_nodes/routing_nodes_stats_{todays_date}_num_nodes.png",
-            facecolor="#033048",
-        )
+        features = [
+            ("routing_nodes", "total_nodes"),
+        ]
+
+        for fe in features:
+            # Create figure
+            f = plt.figure(figsize=(16, 9))
+            # Plot
+            plot_routing_vs_net_statistics(
+                f,
+                routing_nodes_stats,
+                network_basic_stats,
+                fe[0],
+                fe[1],
+                end,
+                start,
+            )
+            # Save figure to charts folder
+            s, e = start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
+            f.savefig(
+                f"charts/routing_vs_net_nodes/routing_nodes_stats_{s}_to_{e}_{fe[1]}.png",
+                facecolor="#033048",
+            )
 
     elif choice == 3:  # PIE CHARTS
 
@@ -152,7 +161,7 @@ def generate_chosen_chart(
         plot_big_nodes_distribution(f, categories_distr)
         # Save chart
         f.savefig(
-            f"charts/pie_charts/big_nodes_pie_{todays_date}.png",
+            f"charts/pie_charts/big_nodes_pie_{end}.png",
             facecolor="#033048",
         )
 
@@ -171,7 +180,7 @@ def generate_chosen_chart(
         plot_capacities_pie(f, ln_total_cap, rn_total_cap, big_total_cap)
         # Save figure
         f.savefig(
-            f"charts/pie_charts/capacity_distribution_{todays_date}.png",
+            f"charts/pie_charts/capacity_distribution_{end}.png",
             facecolor="#033048",
         )
 
@@ -186,7 +195,7 @@ def generate_chosen_chart(
         plot_nodes_categories(f, rn_count, rest_count, big_count)
         # Save figure
         f.savefig(
-            f"charts/pie_charts/share_nodes_pie_{todays_date}.png",
+            f"charts/pie_charts/share_nodes_pie_{end}.png",
             facecolor="#033048",
         )
 
@@ -201,9 +210,10 @@ def generate_chosen_chart(
             end,
             start,
         )
+        s, e = start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
         # Save chart
         f.savefig(
-            f"charts/average_stats/avg_node_capacity_{todays_date}.png",
+            f"charts/average_stats/avg_node_capacity_{s}_to_{e}.png",
             facecolor="#033048",
         )
 
@@ -222,7 +232,7 @@ def generate_chosen_chart(
         )
         # Save chart
         f.savefig(
-            f"charts/average_stats/avg_chan_size_{todays_date}.png",
+            f"charts/average_stats/avg_chan_size_{s}_to_{e}.png",
             facecolor="#033048",
         )
 
@@ -248,8 +258,11 @@ def generate_chosen_chart(
         f = plt.figure(figsize=(16, 9))
         # Plot area chart
         plot_area_capacities_chart(f, x, y_1, y_2, y_3)
+
+        s, e = start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
+
         f.savefig(
-            f"charts/area_charts/stacked_area_chart_{todays_date}.png",
+            f"charts/area_charts/stacked_area_chart_{s}_to_{e}.png",
             facecolor="#033048",
         )
 
@@ -326,7 +339,7 @@ def main():
     print("Converting today's network graph into a csv file ...")
     # MISSING CODE
     directory = "data/processed/graphs/"
-    print(f"Done! Find the new netwok graph file in:\n\t{directory}")
+    print(f"Done! Find the new network graph file in:\n\t{directory}")
     time.sleep(3)
 
     print("Updating network statistics with today's data ...")
@@ -340,10 +353,11 @@ def main():
     """
     # Ask for option
     opt = input(menu)
-    dates = list()  # Empty list
+    dates = [None] * 2  # Empty list
+    date_for_pie = None
 
     while True:
-
+        generated = False
         while check_invalid_choice(opt, menu=True):
             print("Invalid option, try again")
             opt = input(menu)
@@ -358,21 +372,45 @@ def main():
         chosen_chart = ask_for_chart()
         # if chosen chart is pie chart, then only one date needed
         if chosen_chart == 3:
-            d = ask_for_date()  # Ask only for one date
-            dates.append("some date")
-            dates.append(d)
+            date_for_pie = ask_for_date()  # Ask only for one date
+            # dates[1] = date_for_pie
+            generate_chosen_chart(chosen_chart, end=date_for_pie)
+            generated = True
         # CHOOSE DATES
-        if len(dates) == 0:  # if dates is empty
+        if dates.count(None) == 2:  # if dates is empty
             start, end = ask_for_pair_of_dates()
 
             while not validate_pair_of_dates(start, end):
                 print("\nDates difference should be at least of 7 days\n")
                 start, end = ask_for_pair_of_dates()
 
-            dates.append(start)
-            dates.append(end)
+            dates[0] = start
+            dates[1] = end
 
-        generate_chosen_chart(chosen_chart, dates[0], dates[1])
+        elif chosen_chart != 3:  # already asked for dates before
+            print("Do you want to enter new dates?")
+            msg_2 = """
+            1. Yes
+            2. No\n\t
+            """
+            ans = input(msg_2)
+            while check_invalid_choice(ans, menu=True):
+                print("Invalid option, try again")
+                ans = input(msg_2)
+            if int(ans) == 1:
+                start, end = ask_for_pair_of_dates()
+
+                while not validate_pair_of_dates(start, end):
+                    print("\nDates difference should be at least of 7 days\n")
+                    start, end = ask_for_pair_of_dates()
+
+                dates[0] = start
+                dates[1] = end
+
+        if not generated:
+            print(dates)
+            generate_chosen_chart(chosen_chart, dates[0], dates[1])
+
         print("\nCharts generated successfuly!\n")
         time.sleep(2)
 
