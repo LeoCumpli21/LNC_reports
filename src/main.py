@@ -7,7 +7,7 @@ from save_basic_stats import (
     load_routing_nodes_stats,
 )
 from generate_chart_routing_vs_network_nodes import *
-from generate_chart_total_stats import plot_net_statistics
+from generate_chart_total_stats import plot_net_statistics, plot_btc_vs_usd_cap
 from generate_chart_average_stats import plot_med_statistics
 from generate_chart_big_nodes_categories_pie import *
 from generate_chart_networks_capacity_distr import *
@@ -118,6 +118,21 @@ def generate_chosen_chart(
                 f"charts/total_stats/network_stats_{s}_to_{e}_{fe}.png",
                 facecolor="#033048",
             )
+
+        f = plt.figure(figsize=(16, 9))
+        # plot btc vs usd
+        plot_btc_vs_usd_cap(
+            f,
+            network_basic_stats,
+            start,
+            end,
+        )
+        s, e = start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
+        # save
+        f.savefig(
+            f"charts/total_stats/network_stats_{s}_to_{e}_btc_vs_usd.png",
+            facecolor="#033048",
+        )
 
     elif choice == 2:  # ROUTING VS TOTAL CHART
         features = [
