@@ -1,11 +1,6 @@
-import numpy as np
 import pandas as pd
-import json
-import matplotlib.pyplot as plt
 import requests
 import datetime
-from pandas import json_normalize
-import json, gzip, tarfile, io
 from datetime import datetime
 from process_data import decompress_network_graph, to_pandas_df
 
