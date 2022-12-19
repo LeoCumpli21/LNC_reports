@@ -392,7 +392,7 @@ def main():
             generate_chosen_chart(chosen_chart, end=date_for_pie)
             generated = True
         # CHOOSE DATES
-        if dates.count(None) == 2:  # if dates is empty
+        if dates.count(None) == 2 and chosen_chart != 3:  # if dates is empty
             start, end = ask_for_pair_of_dates()
 
             while not validate_pair_of_dates(start, end):
