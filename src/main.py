@@ -288,11 +288,8 @@ def generate_chosen_chart(
 def main():
 
     # set of the possible args when executing file via command line
-    s_args = {
+    main_args = {
         "--generate_charts",
-        "start_date",
-        "end_date",
-        "unique_date",
         "pie",
         "area",
         "avg",
@@ -301,12 +298,18 @@ def main():
         "--update",
         "--help",
     }
+    chart_args = {
+        "-start_date",
+        "-end_date",
+        "-unique_date",
+    }
 
-    args = set(sys.argv)  # set of args passed when executing file via cl
+    chart_args = list(sys.argv)
+    s_args = set(chart_args)  # set of args passed when executing file via cl
 
-    all_args = s_args.intersection(args)
+    all_args = main_args.intersection(s_args)
 
-    if len(args) == 1:  # no args passed
+    if len(s_args) == 1:  # no args passed
         print("The program needs arguments.")
         sys.exit(0)  # end execution
 
@@ -378,9 +381,28 @@ def main():
         print("Done!")
         time.sleep(3)
 
-    chart_args = all_args - {"--update", "--generate_charts", "--help"}
+    # list of args with one leading "-"
+    l_args = [a for a in list(sys.argv) if a[0] == "-" and a[1] != "-"]
+    dates = [None] * 2  # Empty list
+    date_for_pie = None
 
     if "--generate_charts" in all_args:
+        if "-start_date" in l_args and "-end_date" in l_args:
+            ix_1, ix_2 = chart_args.index("-start_date"), chart_args.index(
+                "-end_date"
+            )
+            # dates should be provided after start_date and end_date args
+            dates[0], dates[1] = chart_args[ix_1 + 1], chart_args[ix_2 + 1]
+        elif "-unique_date" in l_args:
+            ix = chart_args.index("-unique_date")
+            date_for_pie = chart_args[ix + 1]
+        else:
+            print(
+                """When invoquing --generate_charts you have to specify 
+                the date or dates of your charts"""
+            )
+            sys.exit(0)  # end execution
+
         network_basic_stats = load_network_basic_stats(net_stats_filename)
         routing_nodes_stats = load_routing_nodes_stats(routing_stats_file)
         big_nodes_stats = load_big_nodes_stats(big_stats_file)
@@ -401,8 +423,6 @@ def main():
     """
     # Ask for option
     opt = input(menu)
-    dates = [None] * 2  # Empty list
-    date_for_pie = None
 
     while True:
         generated = False
