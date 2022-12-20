@@ -22,7 +22,8 @@ def check_invalid_date(date_string: str) -> bool:
     try:
         datetime.strptime(date_string, "%Y-%m-%d")
         return False
-    except ValueError:
+    except ValueError as e:
+        print(e)
         return True
 
 
@@ -53,7 +54,7 @@ def ask_for_pair_of_dates():
     return start, end
 
 
-def validate_pair_of_dates(date_1, date_2) -> bool:
+def validate_pair_of_dates(date_1: datetime, date_2: datetime) -> bool:
 
     return (date_2 - date_1).days >= 7
 
@@ -290,30 +291,20 @@ def main():
     # set of the possible args when executing file via command line
     main_args = {
         "--generate_charts",
-        "pie",
-        "area",
-        "avg",
-        "routing_vs_total",
-        "total",
         "--update",
         "--help",
     }
-    chart_args = {
-        "-start_date",
-        "-end_date",
-        "-unique_date",
-    }
 
-    chart_args = list(sys.argv)
-    s_args = set(chart_args)  # set of args passed when executing file via cl
+    received_args = list(sys.argv)
+    s_args = set(received_args)  # set of args passed when executing file via cl
 
-    all_args = main_args.intersection(s_args)
+    main_args = main_args.intersection(s_args)
 
     if len(s_args) == 1:  # no args passed
         print("The program needs arguments.")
         sys.exit(0)  # end execution
 
-    if len(all_args) == 0:  # incorrect args passed
+    if len(main_args) == 0:  # incorrect args passed
         print("Incorrect arguments.")
         sys.exit(0)  # end execution
 
@@ -327,7 +318,7 @@ def main():
     network_basic_stats = None
     big_nodes_stats = None
 
-    if "--update" in all_args:
+    if "--update" in main_args:
         print("Converting today's network graph into a csv file ...")
         # MISSING CODE
         directory = "data/processed/graphs/"
@@ -382,20 +373,34 @@ def main():
         time.sleep(3)
 
     # list of args with one leading "-"
-    l_args = [a for a in list(sys.argv) if a[0] == "-" and a[1] != "-"]
+    chart_args = [a for a in received_args if a[0] == "-" and a[1] != "-"]
     dates = [None] * 2  # Empty list
     date_for_pie = None
 
-    if "--generate_charts" in all_args:
-        if "-start_date" in l_args and "-end_date" in l_args:
-            ix_1, ix_2 = chart_args.index("-start_date"), chart_args.index(
-                "-end_date"
-            )
+    if "--generate_charts" in main_args:
+        if "-start_date" in chart_args and "-end_date" in chart_args:
+            ix_1, ix_2 = received_args.index(
+                "-start_date"
+            ), received_args.index("-end_date")
             # dates should be provided after start_date and end_date args
-            dates[0], dates[1] = chart_args[ix_1 + 1], chart_args[ix_2 + 1]
-        elif "-unique_date" in l_args:
-            ix = chart_args.index("-unique_date")
-            date_for_pie = chart_args[ix + 1]
+            dates[0], dates[1] = (
+                received_args[ix_1 + 1],
+                received_args[ix_2 + 1],
+            )
+            for i, d in enumerate(dates):
+                if check_invalid_date(d):
+                    print(f"{d} is an invalid date.")
+                    sys.exit(0)  # end execution
+                dates[i] = get_time(d)
+
+        elif "-unique_date" in chart_args:
+            ix = received_args.index("-unique_date")
+            date_for_pie = received_args[ix + 1]
+            if check_invalid_date(date_for_pie):
+                print(f"{date_for_pie} is an invalid date.")
+                sys.exit(0)  # end execution
+            date_for_pie = get_time(date_for_pie)
+
         else:
             print(
                 """When invoquing --generate_charts you have to specify 
@@ -416,86 +421,112 @@ def main():
         network_basic_stats = network_basic_stats.set_index("date", drop=False)
         big_nodes_stats = big_nodes_stats.set_index("date", drop=False)
 
-    menu = """
-    Now, choose whether to generate charts:
-    1. Generate charts
-    2. Don't, end execution.\n\t
-    """
-    # Ask for option
-    opt = input(menu)
+    dates_args = {
+        "-start_date",
+        "-end_date",
+        "unique_date",
+    }
 
-    while True:
-        generated = False
-        while check_invalid_choice(opt, menu=True):
-            print("Invalid option, try again")
-            opt = input(menu)
+    chart_args = set(chart_args) - dates_args
+    possible_charts = {
+        "-area": 5,
+        "-total": 1,
+        "-average": 4,
+        "-pie": 3,
+        "-routing": 2,
+    }
 
-        if int(opt) == 2:
-            print("ENDING EXECUTION")
-            time.sleep(3)
-            sys.exit(0)
+    for chart in chart_args:
+        generate_chosen_chart(
+            possible_charts[chart],
+            network_basic_stats,
+            routing_nodes_stats,
+            big_nodes_stats,
+            dates[0],
+            dates[1],
+        )
 
-        print("Alright\n")
-        # CHOSE A CHART
-        chosen_chart = ask_for_chart()
-        # if chosen chart is pie chart, then only one date needed
-        if chosen_chart == 3:
-            date_for_pie = ask_for_date()  # Ask only for one date
-            # dates[1] = date_for_pie
-            generate_chosen_chart(
-                chosen_chart,
-                network_basic_stats,
-                routing_nodes_stats,
-                big_nodes_stats,
-                end=date_for_pie,
-            )
-            generated = True
-        # CHOOSE DATES
-        if dates.count(None) == 2 and chosen_chart != 3:  # if dates is empty
-            start, end = ask_for_pair_of_dates()
+    print("\n\tDone! :)")
+    # menu = """
+    # Now, choose whether to generate charts:
+    # 1. Generate charts
+    # 2. Don't, end execution.\n\t
+    # """
+    # # Ask for option
+    # opt = input(menu)
 
-            while not validate_pair_of_dates(start, end):
-                print("\nDates difference should be at least of 7 days\n")
-                start, end = ask_for_pair_of_dates()
+    # while True:
+    #     generated = False
+    #     while check_invalid_choice(opt, menu=True):
+    #         print("Invalid option, try again")
+    #         opt = input(menu)
 
-            dates[0] = start
-            dates[1] = end
+    #     if int(opt) == 2:
+    #         print("ENDING EXECUTION")
+    #         time.sleep(3)
+    #         sys.exit(0)
 
-        elif chosen_chart != 3:  # already asked for dates before
-            print("Do you want to enter new dates?")
-            msg_2 = """
-            1. Yes
-            2. No\n\t
-            """
-            ans = input(msg_2)
-            while check_invalid_choice(ans, menu=True):
-                print("Invalid option, try again")
-                ans = input(msg_2)
-            if int(ans) == 1:
-                start, end = ask_for_pair_of_dates()
+    #     print("Alright\n")
+    #     # CHOSE A CHART
+    #     chosen_chart = ask_for_chart()
+    #     # if chosen chart is pie chart, then only one date needed
+    #     if chosen_chart == 3:
+    #         date_for_pie = ask_for_date()  # Ask only for one date
+    #         # dates[1] = date_for_pie
+    #         generate_chosen_chart(
+    #             chosen_chart,
+    #             network_basic_stats,
+    #             routing_nodes_stats,
+    #             big_nodes_stats,
+    #             end=date_for_pie,
+    #         )
+    #         generated = True
+    #     # CHOOSE DATES
+    #     if dates.count(None) == 2 and chosen_chart != 3:  # if dates is empty
+    #         start, end = ask_for_pair_of_dates()
 
-                while not validate_pair_of_dates(start, end):
-                    print("\nDates difference should be at least of 7 days\n")
-                    start, end = ask_for_pair_of_dates()
+    #         while not validate_pair_of_dates(start, end):
+    #             print("\nDates difference should be at least of 7 days\n")
+    #             start, end = ask_for_pair_of_dates()
 
-                dates[0] = start
-                dates[1] = end
+    #         dates[0] = start
+    #         dates[1] = end
 
-        if not generated:
-            print(dates)
-            generate_chosen_chart(
-                chosen_chart,
-                network_basic_stats,
-                routing_nodes_stats,
-                big_nodes_stats,
-                dates[0],
-                dates[1],
-            )
+    #     elif chosen_chart != 3:  # already asked for dates before
+    #         print("Do you want to enter new dates?")
+    #         msg_2 = """
+    #         1. Yes
+    #         2. No\n\t
+    #         """
+    #         ans = input(msg_2)
+    #         while check_invalid_choice(ans, menu=True):
+    #             print("Invalid option, try again")
+    #             ans = input(msg_2)
+    #         if int(ans) == 1:
+    #             start, end = ask_for_pair_of_dates()
 
-        print("\nCharts generated successfuly!\n")
-        time.sleep(2)
+    #             while not validate_pair_of_dates(start, end):
+    #                 print("\nDates difference should be at least of 7 days\n")
+    #                 start, end = ask_for_pair_of_dates()
 
-        opt = input(menu)
+    #             dates[0] = start
+    #             dates[1] = end
+
+    #     if not generated:
+    #         print(dates)
+    #         generate_chosen_chart(
+    #             chosen_chart,
+    #             network_basic_stats,
+    #             routing_nodes_stats,
+    #             big_nodes_stats,
+    #             dates[0],
+    #             dates[1],
+    #         )
+
+    #     print("\nCharts generated successfuly!\n")
+    #     time.sleep(2)
+
+    #     opt = input(menu)
 
 
 if __name__ == "__main__":
