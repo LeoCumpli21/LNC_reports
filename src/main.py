@@ -98,6 +98,9 @@ def ask_for_chart() -> int:
 
 def generate_chosen_chart(
     choice: int,
+    network_basic_stats: pd.DataFrame,
+    routing_nodes_stats: pd.DataFrame,
+    big_nodes_stats: pd.DataFrame,
     start: datetime = None,
     end: datetime = datetime.strptime(
         datetime.now().strftime("%Y-%m-%d"), "%Y-%m-%d"
@@ -282,84 +285,114 @@ def generate_chosen_chart(
         )
 
 
-# Get today's date in format <year-month-day>
-todays_date = datetime.now().strftime("%Y-%m-%d")
-# todays_date = "2022-12-05"  ### THIS IS JUST FOR TESTING
-
-# filename = "data/raw/graph_metrics_" + todays_date + ".json.tar.gz"
-
-# # Read graph file
-# graph_json = decompress_network_graph(filename)
-
-# # Get nodes and channels graphs
-# nodes_graph, channels_graph = to_pandas_df(graph_json)
-
-# # Combine channels graph with nodes graph
-# ln_graph = add_node_chan_info(nodes_graph, channels_graph)
-
-# # Drop unnecessary columns
-# ln_graph = ln_graph.drop(
-#     [col for col in ln_graph.columns if "features" in col], axis=1
-# )
-
-# # Change capacity units to btc
-# ln_graph = to_btc_units(ln_graph)
-
-# # Save graph into csv file in data/processed/... folder
-# dir = "data/processed/graphs"
-# ln_graph.to_csv(f"{dir}/network_graph_{todays_date}.csv")
-
-### NETWORK basic stats
-# Load basic stats csv
-net_stats_filename = "data/processed/basic_stats/network_basic_stats.csv"
-network_basic_stats = load_network_basic_stats(net_stats_filename)
-# Save new basic stats
-# add_new_network_stats(network_basic_stats, todays_date)
-
-#### Stats of ROUTING NODES
-# network's csv graph file
-net_csv = "data/processed/graphs/network_graph_" + todays_date + ".csv"
-# routing nodes stats csv file
-routing_stats_file = "data/processed/basic_stats/routing_nodes_stats.csv"
-# Save new routing nodes stats
-# save_routing_nodes_stats(net_csv, routing_stats_file, todays_date)
-
-### BIG NODES stats
-big_stats_file = "data/processed/basic_stats/big_nodes_stats.csv"
-# Save new big nodes stats
-# save_big_nodes_stats(net_csv, big_stats_file, todays_date)
-
-### CREATING CHARTS ###
-
-### Routing vs network nodes chart
-network_basic_stats = load_network_basic_stats(net_stats_filename)
-routing_nodes_stats = load_routing_nodes_stats(routing_stats_file)
-big_nodes_stats = load_big_nodes_stats(big_stats_file)
-
-# Cast date column of our dataframes from str to date time
-network_basic_stats = cast_df_date(network_basic_stats)
-routing_nodes_stats = cast_df_date(routing_nodes_stats)
-big_nodes_stats = cast_df_date(big_nodes_stats)
-
-routing_nodes_stats = routing_nodes_stats.set_index("date", drop=False)
-network_basic_stats = network_basic_stats.set_index("date", drop=False)
-big_nodes_stats = big_nodes_stats.set_index("date", drop=False)
-
-
 def main():
 
-    print("WELCOME")
-    time.sleep(3)
+    # set of the possible args when executing file via command line
+    s_args = {
+        "--generate_charts",
+        "start_date",
+        "end_date",
+        "unique_date",
+        "pie",
+        "area",
+        "avg",
+        "routing_vs_total",
+        "total",
+        "--update",
+        "--help",
+    }
 
-    print("Converting today's network graph into a csv file ...")
-    # MISSING CODE
-    directory = "data/processed/graphs/"
-    print(f"Done! Find the new network graph file in:\n\t{directory}")
-    time.sleep(3)
+    args = set(sys.argv)  # set of args passed when executing file via cl
 
-    print("Updating network statistics with today's data ...")
-    print("Done!")
-    time.sleep(3)
+    all_args = s_args.intersection(args)
+
+    if len(args) == 1:  # no args passed
+        print("The program needs arguments.")
+        sys.exit(0)  # end execution
+
+    if len(all_args) == 0:  # incorrect args passed
+        print("Incorrect arguments.")
+        sys.exit(0)  # end execution
+
+    # print("WELCOME")
+    # time.sleep(3)
+    todays_date = None
+    net_stats_filename = "data/processed/basic_stats/network_basic_stats.csv"
+    routing_stats_file = "data/processed/basic_stats/routing_nodes_stats.csv"
+    big_stats_file = "data/processed/basic_stats/big_nodes_stats.csv"
+    routing_nodes_stats = None
+    network_basic_stats = None
+    big_nodes_stats = None
+
+    if "--update" in all_args:
+        print("Converting today's network graph into a csv file ...")
+        # MISSING CODE
+        directory = "data/processed/graphs/"
+        # Get today's date in format <year-month-day>
+        todays_date = datetime.now().strftime("%Y-%m-%d")
+        # todays_date = "2022-12-05"  ### THIS IS JUST FOR TESTING
+
+        filename = "data/raw/graph_metrics_" + todays_date + ".json.tar.gz"
+
+        # Read graph file
+        graph_json = decompress_network_graph(filename)
+
+        # Get nodes and channels graphs
+        nodes_graph, channels_graph = to_pandas_df(graph_json)
+
+        # Combine channels graph with nodes graph
+        ln_graph = add_node_chan_info(nodes_graph, channels_graph)
+
+        # Drop unnecessary columns
+        ln_graph = ln_graph.drop(
+            [col for col in ln_graph.columns if "features" in col], axis=1
+        )
+
+        # Change capacity units to btc
+        ln_graph = to_btc_units(ln_graph)
+
+        # Save graph into csv file in data/processed/... folder
+        dir = "data/processed/graphs"
+        ln_graph.to_csv(f"{dir}/network_graph_{todays_date}.csv")
+
+        print(f"Done! Find the new network graph file in:\n\t{directory}")
+        time.sleep(3)
+
+        ### NETWORK basic stats
+        # Load basic stats csv
+        network_basic_stats = load_network_basic_stats(net_stats_filename)
+        # Save new basic stats
+        add_new_network_stats(network_basic_stats, todays_date)
+
+        #### Stats of ROUTING NODES
+        # network's csv graph file
+        net_csv = "data/processed/graphs/network_graph_" + todays_date + ".csv"
+        # routing nodes stats csv file
+        # Save new routing nodes stats
+        save_routing_nodes_stats(net_csv, routing_stats_file, todays_date)
+
+        ### BIG NODES stats
+        # Save new big nodes stats
+        save_big_nodes_stats(net_csv, big_stats_file, todays_date)
+        print("Updating network statistics with today's data ...")
+        print("Done!")
+        time.sleep(3)
+
+    chart_args = all_args - {"--update", "--generate_charts", "--help"}
+
+    if "--generate_charts" in all_args:
+        network_basic_stats = load_network_basic_stats(net_stats_filename)
+        routing_nodes_stats = load_routing_nodes_stats(routing_stats_file)
+        big_nodes_stats = load_big_nodes_stats(big_stats_file)
+
+        # Cast date column of our dataframes from str to date time
+        network_basic_stats = cast_df_date(network_basic_stats)
+        routing_nodes_stats = cast_df_date(routing_nodes_stats)
+        big_nodes_stats = cast_df_date(big_nodes_stats)
+
+        routing_nodes_stats = routing_nodes_stats.set_index("date", drop=False)
+        network_basic_stats = network_basic_stats.set_index("date", drop=False)
+        big_nodes_stats = big_nodes_stats.set_index("date", drop=False)
 
     menu = """
     Now, choose whether to generate charts:
@@ -389,7 +422,13 @@ def main():
         if chosen_chart == 3:
             date_for_pie = ask_for_date()  # Ask only for one date
             # dates[1] = date_for_pie
-            generate_chosen_chart(chosen_chart, end=date_for_pie)
+            generate_chosen_chart(
+                chosen_chart,
+                network_basic_stats,
+                routing_nodes_stats,
+                big_nodes_stats,
+                end=date_for_pie,
+            )
             generated = True
         # CHOOSE DATES
         if dates.count(None) == 2 and chosen_chart != 3:  # if dates is empty
@@ -424,7 +463,14 @@ def main():
 
         if not generated:
             print(dates)
-            generate_chosen_chart(chosen_chart, dates[0], dates[1])
+            generate_chosen_chart(
+                chosen_chart,
+                network_basic_stats,
+                routing_nodes_stats,
+                big_nodes_stats,
+                dates[0],
+                dates[1],
+            )
 
         print("\nCharts generated successfuly!\n")
         time.sleep(2)
@@ -432,4 +478,5 @@ def main():
         opt = input(menu)
 
 
-main()
+if __name__ == "__main__":
+    main()
