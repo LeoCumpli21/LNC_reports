@@ -48,7 +48,7 @@ def get_total_stats(channels_graph, nodes_graph):
 
 def get_btc_price(date: str) -> float:
 
-    timestamp = datetime.datetime.strptime(date, "%Y-%m-%d").timestamp()
+    timestamp = datetime.strptime(date, "%Y-%m-%d").timestamp()
     url = "https://min-api.cryptocompare.com/data/v2/histoday"
     params = {
         "fsym": "BTC",
@@ -115,7 +115,7 @@ def add_new_network_stats(df, todays_date):
     # add today's network stats
     len_df = df.shape[0]
 
-    filename = "data/raw/graph_metrics_" + todays_date + ".json.tar.gz"
+    filename = "../data/raw/graph_metrics_" + todays_date + ".json.tar.gz"
 
     graph = decompress_network_graph(filename)
     nodes_graph, channels_graph = to_pandas_df(graph)
@@ -125,7 +125,7 @@ def add_new_network_stats(df, todays_date):
     )
     df.loc[len_df] = network_data_td
 
-    df.to_csv("data/processed/basic_stats/network_basic_stats.csv")
+    df.to_csv("../data/processed/basic_stats/network_basic_stats.csv")
 
 
 def save_routing_nodes_stats(filename_1, filename_2, todays_date):
