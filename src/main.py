@@ -1,3 +1,11 @@
+from __future__ import print_function
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from googleapiclient.http import MediaIoBaseDownload
+
 from process_data import *
 from save_basic_stats import add_new_network_stats, save_routing_nodes_stats
 from save_basic_stats import save_big_nodes_stats
@@ -15,6 +23,38 @@ from generate_chart_nodes_categories import *
 from generate_chart_stacked_area import *
 import time
 import sys
+import os.path
+import io
+import google.auth
+
+
+def download_file(service, real_file_id, local_fd):
+    """Downloads a file
+    Args:
+        service: Drive API Service instance.
+        real_file_id: ID of the file to download
+        local_fd: io.Base or file object, the stream that the Drive file's
+            contents will be written to.
+    """
+
+    try:
+        file_id = real_file_id
+
+        # pylint: disable=maybe-no-member
+        request = service.files().get_media(fileId=file_id)
+        # file = io.BytesIO()
+        downloader = MediaIoBaseDownload(local_fd, request)
+        done = False
+        while done is False:
+            status, done = downloader.next_chunk()
+            print(f"Download {int(status.progress() * 100)}.")
+
+    except HttpError as error:
+        print(f"An error occurred: {error}")
+        # file = None
+
+    # return file.getvalue()
+    return
 
 
 def check_invalid_date(date_string: str) -> bool:
@@ -311,48 +351,78 @@ def main():
     # print("WELCOME")
     # time.sleep(3)
     todays_date = None
-    net_stats_filename = "data/processed/basic_stats/network_basic_stats.csv"
-    routing_stats_file = "data/processed/basic_stats/routing_nodes_stats.csv"
-    big_stats_file = "data/processed/basic_stats/big_nodes_stats.csv"
+    net_stats_filename = "../data/processed/basic_stats/network_basic_stats.csv"
+    routing_stats_file = "../data/processed/basic_stats/routing_nodes_stats.csv"
+    big_stats_file = "../data/processed/basic_stats/big_nodes_stats.csv"
     routing_nodes_stats = None
     network_basic_stats = None
     big_nodes_stats = None
 
     if "--update" in main_args:
-        print("Converting today's network graph into a csv file ...")
-        # MISSING CODE
-        directory = "data/processed/graphs/"
+
+        # If modifying these scopes, delete the file token.json.
+        SCOPES = ["https://www.googleapis.com/auth/drive"]
+
+        creds = None
+        # The file token.json stores the user's access and refresh tokens, and is
+        # created automatically when the authorization flow completes for the first
+        # time.
+        if os.path.exists("token.json"):
+            creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+        # If there are no (valid) credentials available, let the user log in.
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file(
+                    "credentials.json", SCOPES
+                )
+                creds = flow.run_local_server(port=0)
+            # Save the credentials for the next run
+            with open("token.json", "w") as token:
+                token.write(creds.to_json())
+
+        try:
+            service = build("drive", "v3", credentials=creds)
+
+        except HttpError as error:
+            # TODO(developer) - Handle errors from drive API.
+            print(f"An error occurred: {error}")
+
         # Get today's date in format <year-month-day>
-        todays_date = datetime.now().strftime("%Y-%m-%d")
-        # todays_date = "2022-12-05"  ### THIS IS JUST FOR TESTING
+        # todays_date = datetime.now().strftime("%Y-%m-%d")
+        todays_date = "2022-12-07"  ### THIS IS JUST FOR TESTING
+        filename = "../data/raw/graph_metrics_" + todays_date + ".json.tar.gz"
+        # stream that the drive's file content will be written to
+        fh = io.FileIO(filename, "wb")
+        # downloads current's date graph metrics .json file and saves it
+        download_file(service, "1YWxFmt4UDiqHPn-IUxioKjxybwEg_lGw", fh)
 
-        filename = "data/raw/graph_metrics_" + todays_date + ".json.tar.gz"
+        print("\nSUCCESSFUL DOWNLOAD")
 
+        print("\nConverting today's network graph into a csv file ...")
+        filename = "../data/raw/graph_metrics_" + todays_date + ".json.tar.gz"
         # Read graph file
         graph_json = decompress_network_graph(filename)
-
         # Get nodes and channels graphs
         nodes_graph, channels_graph = to_pandas_df(graph_json)
-
         # Combine channels graph with nodes graph
         ln_graph = add_node_chan_info(nodes_graph, channels_graph)
-
         # Drop unnecessary columns
         ln_graph = ln_graph.drop(
             [col for col in ln_graph.columns if "features" in col], axis=1
         )
-
         # Change capacity units to btc
         ln_graph = to_btc_units(ln_graph)
-
         # Save graph into csv file in data/processed/... folder
-        dir = "data/processed/graphs"
+        dir = "../data/processed/graphs"
         ln_graph.to_csv(f"{dir}/network_graph_{todays_date}.csv")
 
-        print(f"Done! Find the new network graph file in:\n\t{directory}")
+        print(f"Done! Find the new network graph file in:\n\t{dir}")
         time.sleep(3)
 
         ### NETWORK basic stats
+        print("Updating network statistics with today's data ...")
         # Load basic stats csv
         network_basic_stats = load_network_basic_stats(net_stats_filename)
         # Save new basic stats
@@ -360,7 +430,9 @@ def main():
 
         #### Stats of ROUTING NODES
         # network's csv graph file
-        net_csv = "data/processed/graphs/network_graph_" + todays_date + ".csv"
+        net_csv = (
+            "../data/processed/graphs/network_graph_" + todays_date + ".csv"
+        )
         # routing nodes stats csv file
         # Save new routing nodes stats
         save_routing_nodes_stats(net_csv, routing_stats_file, todays_date)
@@ -368,9 +440,12 @@ def main():
         ### BIG NODES stats
         # Save new big nodes stats
         save_big_nodes_stats(net_csv, big_stats_file, todays_date)
-        print("Updating network statistics with today's data ...")
+
         print("Done!")
         time.sleep(3)
+
+        print("DONEDONEDONE")
+        sys.exit(0)
 
     # list of args with one leading "-"
     chart_args = [a for a in received_args if a[0] == "-" and a[1] != "-"]
