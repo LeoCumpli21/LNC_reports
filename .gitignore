@@ -1,3 +1,4 @@
 src/__pycache__
 src/credentials.json
 src/token.json
+data/raw
