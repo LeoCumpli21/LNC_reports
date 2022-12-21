@@ -1,2 +1,5 @@
 src/__pycache__
-src/project-lncapital-8d45d674ea9b.json
+src/credentials.json
+src/token.json
+src/drive_ids.txt
+data/raw
