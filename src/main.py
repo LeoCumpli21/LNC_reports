@@ -25,7 +25,6 @@ import time
 import sys
 import os.path
 import io
-import google.auth
 
 
 def download_file(service, real_file_id, local_fd):
@@ -51,10 +50,45 @@ def download_file(service, real_file_id, local_fd):
 
     except HttpError as error:
         print(f"An error occurred: {error}")
-        # file = None
 
-    # return file.getvalue()
     return
+
+
+def get_files(service, real_folder_id, team_id):
+    """Gets files (names, ids) of specific folder
+    Args:
+        service: Drive API Service instance.
+        real_folder_id: ID of the folder to query
+        team_id: Team's Drive ID
+    Returns:
+        List of files
+    """
+
+    try:
+        folder_id = real_folder_id
+        # Use the service object to get a list of files in the specified folder
+        team_drive_id = team_id
+
+        # Use the service object to get a list of files in the specified folder in the Team Drive
+        results = (
+            service.files()
+            .list(
+                q=f"'{folder_id}' in parents and trashed=false",
+                fields="files(id, name)",
+                corpora="drive",
+                driveId=team_drive_id,
+                includeItemsFromAllDrives="true",
+                supportsAllDrives="true",
+                pageSize=1000,
+            )
+            .execute()
+        )
+        items = results.get("files", [])
+
+        return items
+
+    except HttpError as error:
+        print(f"An error occurred: {error}")
 
 
 def check_invalid_date(date_string: str) -> bool:
@@ -389,14 +423,38 @@ def main():
             # TODO(developer) - Handle errors from drive API.
             print(f"An error occurred: {error}")
 
+        # Open drive_ids.txt file in read-only mode
+        with open("drive_ids.txt", "r") as f:
+            # Read all the lines of the file into a list
+            lines = f.readlines()
+        # First line holds the folder id
+        folder_id = lines[0][lines[0].find(":") + 2 :].rstrip()
+        # Second line holds the team's drive id
+        team_id = lines[1][lines[1].find(":") + 2 :].rstrip()
+        # Get a list of the files in our graph metrics Shared Drive folder
+        graph_files = get_files(service, folder_id, team_id)
+
         # Get today's date in format <year-month-day>
-        # todays_date = datetime.now().strftime("%Y-%m-%d")
-        todays_date = "2022-12-07"  ### THIS IS JUST FOR TESTING
+        todays_date = datetime.now().strftime("%Y-%m-%d")
+        # todays_date = "2022-12-09"  ### THIS IS JUST FOR TESTING
+
+        curr_file_name = None
+        for file in graph_files:
+            if f"graph_metrics_{todays_date}" in file["name"]:
+                curr_file_name = file["name"]  # save today's file name
+                break
+        curr_file_id = None
+        for file in graph_files:
+            file_name = file["name"]
+            if file_name == curr_file_name:
+                curr_file_id = file["id"]  # Found today's file id
+                break
+
         filename = "../data/raw/graph_metrics_" + todays_date + ".json.tar.gz"
         # stream that the drive's file content will be written to
         fh = io.FileIO(filename, "wb")
         # downloads current's date graph metrics .json file and saves it
-        download_file(service, "1YWxFmt4UDiqHPn-IUxioKjxybwEg_lGw", fh)
+        download_file(service, curr_file_id, fh)
 
         print("\nSUCCESSFUL DOWNLOAD")
 
@@ -443,9 +501,6 @@ def main():
 
         print("Done!")
         time.sleep(3)
-
-        print("DONEDONEDONE")
-        sys.exit(0)
 
     # list of args with one leading "-"
     chart_args = [a for a in received_args if a[0] == "-" and a[1] != "-"]
@@ -521,7 +576,7 @@ def main():
             dates[1],
         )
 
-    print("\n\tDone! :)")
+    print("\n\tEnding Execution...")
     # menu = """
     # Now, choose whether to generate charts:
     # 1. Generate charts
