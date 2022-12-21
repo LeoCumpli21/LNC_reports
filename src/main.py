@@ -22,7 +22,8 @@ def check_invalid_date(date_string: str) -> bool:
     try:
         datetime.strptime(date_string, "%Y-%m-%d")
         return False
-    except ValueError:
+    except ValueError as e:
+        print(e)
         return True
 
 
@@ -53,7 +54,7 @@ def ask_for_pair_of_dates():
     return start, end
 
 
-def validate_pair_of_dates(date_1, date_2) -> bool:
+def validate_pair_of_dates(date_1: datetime, date_2: datetime) -> bool:
 
     return (date_2 - date_1).days >= 7
 
@@ -98,6 +99,9 @@ def ask_for_chart() -> int:
 
 def generate_chosen_chart(
     choice: int,
+    network_basic_stats: pd.DataFrame,
+    routing_nodes_stats: pd.DataFrame,
+    big_nodes_stats: pd.DataFrame,
     start: datetime = None,
     end: datetime = datetime.strptime(
         datetime.now().strftime("%Y-%m-%d"), "%Y-%m-%d"
@@ -282,154 +286,248 @@ def generate_chosen_chart(
         )
 
 
-# Get today's date in format <year-month-day>
-todays_date = datetime.now().strftime("%Y-%m-%d")
-# todays_date = "2022-12-05"  ### THIS IS JUST FOR TESTING
-
-# filename = "data/raw/graph_metrics_" + todays_date + ".json.tar.gz"
-
-# # Read graph file
-# graph_json = decompress_network_graph(filename)
-
-# # Get nodes and channels graphs
-# nodes_graph, channels_graph = to_pandas_df(graph_json)
-
-# # Combine channels graph with nodes graph
-# ln_graph = add_node_chan_info(nodes_graph, channels_graph)
-
-# # Drop unnecessary columns
-# ln_graph = ln_graph.drop(
-#     [col for col in ln_graph.columns if "features" in col], axis=1
-# )
-
-# # Change capacity units to btc
-# ln_graph = to_btc_units(ln_graph)
-
-# # Save graph into csv file in data/processed/... folder
-# dir = "data/processed/graphs"
-# ln_graph.to_csv(f"{dir}/network_graph_{todays_date}.csv")
-
-### NETWORK basic stats
-# Load basic stats csv
-net_stats_filename = "data/processed/basic_stats/network_basic_stats.csv"
-network_basic_stats = load_network_basic_stats(net_stats_filename)
-# Save new basic stats
-# add_new_network_stats(network_basic_stats, todays_date)
-
-#### Stats of ROUTING NODES
-# network's csv graph file
-net_csv = "data/processed/graphs/network_graph_" + todays_date + ".csv"
-# routing nodes stats csv file
-routing_stats_file = "data/processed/basic_stats/routing_nodes_stats.csv"
-# Save new routing nodes stats
-# save_routing_nodes_stats(net_csv, routing_stats_file, todays_date)
-
-### BIG NODES stats
-big_stats_file = "data/processed/basic_stats/big_nodes_stats.csv"
-# Save new big nodes stats
-# save_big_nodes_stats(net_csv, big_stats_file, todays_date)
-
-### CREATING CHARTS ###
-
-### Routing vs network nodes chart
-network_basic_stats = load_network_basic_stats(net_stats_filename)
-routing_nodes_stats = load_routing_nodes_stats(routing_stats_file)
-big_nodes_stats = load_big_nodes_stats(big_stats_file)
-
-# Cast date column of our dataframes from str to date time
-network_basic_stats = cast_df_date(network_basic_stats)
-routing_nodes_stats = cast_df_date(routing_nodes_stats)
-big_nodes_stats = cast_df_date(big_nodes_stats)
-
-routing_nodes_stats = routing_nodes_stats.set_index("date", drop=False)
-network_basic_stats = network_basic_stats.set_index("date", drop=False)
-big_nodes_stats = big_nodes_stats.set_index("date", drop=False)
-
-
 def main():
 
-    print("WELCOME")
-    time.sleep(3)
+    # set of the possible args when executing file via command line
+    main_args = {
+        "--generate_charts",
+        "--update",
+        "--help",
+    }
 
-    print("Converting today's network graph into a csv file ...")
-    # MISSING CODE
-    directory = "data/processed/graphs/"
-    print(f"Done! Find the new network graph file in:\n\t{directory}")
-    time.sleep(3)
+    received_args = list(sys.argv)
+    s_args = set(received_args)  # set of args passed when executing file via cl
 
-    print("Updating network statistics with today's data ...")
-    print("Done!")
-    time.sleep(3)
+    main_args = main_args.intersection(s_args)
 
-    menu = """
-    Now, choose whether to generate charts:
-    1. Generate charts
-    2. Don't, end execution.\n\t
-    """
-    # Ask for option
-    opt = input(menu)
+    if len(s_args) == 1:  # no args passed
+        print("The program needs arguments.")
+        sys.exit(0)  # end execution
+
+    if len(main_args) == 0:  # incorrect args passed
+        print("Incorrect arguments.")
+        sys.exit(0)  # end execution
+
+    # print("WELCOME")
+    # time.sleep(3)
+    todays_date = None
+    net_stats_filename = "data/processed/basic_stats/network_basic_stats.csv"
+    routing_stats_file = "data/processed/basic_stats/routing_nodes_stats.csv"
+    big_stats_file = "data/processed/basic_stats/big_nodes_stats.csv"
+    routing_nodes_stats = None
+    network_basic_stats = None
+    big_nodes_stats = None
+
+    if "--update" in main_args:
+        print("Converting today's network graph into a csv file ...")
+        # MISSING CODE
+        directory = "data/processed/graphs/"
+        # Get today's date in format <year-month-day>
+        todays_date = datetime.now().strftime("%Y-%m-%d")
+        # todays_date = "2022-12-05"  ### THIS IS JUST FOR TESTING
+
+        filename = "data/raw/graph_metrics_" + todays_date + ".json.tar.gz"
+
+        # Read graph file
+        graph_json = decompress_network_graph(filename)
+
+        # Get nodes and channels graphs
+        nodes_graph, channels_graph = to_pandas_df(graph_json)
+
+        # Combine channels graph with nodes graph
+        ln_graph = add_node_chan_info(nodes_graph, channels_graph)
+
+        # Drop unnecessary columns
+        ln_graph = ln_graph.drop(
+            [col for col in ln_graph.columns if "features" in col], axis=1
+        )
+
+        # Change capacity units to btc
+        ln_graph = to_btc_units(ln_graph)
+
+        # Save graph into csv file in data/processed/... folder
+        dir = "data/processed/graphs"
+        ln_graph.to_csv(f"{dir}/network_graph_{todays_date}.csv")
+
+        print(f"Done! Find the new network graph file in:\n\t{directory}")
+        time.sleep(3)
+
+        ### NETWORK basic stats
+        # Load basic stats csv
+        network_basic_stats = load_network_basic_stats(net_stats_filename)
+        # Save new basic stats
+        add_new_network_stats(network_basic_stats, todays_date)
+
+        #### Stats of ROUTING NODES
+        # network's csv graph file
+        net_csv = "data/processed/graphs/network_graph_" + todays_date + ".csv"
+        # routing nodes stats csv file
+        # Save new routing nodes stats
+        save_routing_nodes_stats(net_csv, routing_stats_file, todays_date)
+
+        ### BIG NODES stats
+        # Save new big nodes stats
+        save_big_nodes_stats(net_csv, big_stats_file, todays_date)
+        print("Updating network statistics with today's data ...")
+        print("Done!")
+        time.sleep(3)
+
+    # list of args with one leading "-"
+    chart_args = [a for a in received_args if a[0] == "-" and a[1] != "-"]
     dates = [None] * 2  # Empty list
     date_for_pie = None
 
-    while True:
-        generated = False
-        while check_invalid_choice(opt, menu=True):
-            print("Invalid option, try again")
-            opt = input(menu)
+    if "--generate_charts" in main_args:
+        if "-start_date" in chart_args and "-end_date" in chart_args:
+            ix_1, ix_2 = received_args.index(
+                "-start_date"
+            ), received_args.index("-end_date")
+            # dates should be provided after start_date and end_date args
+            dates[0], dates[1] = (
+                received_args[ix_1 + 1],
+                received_args[ix_2 + 1],
+            )
+            for i, d in enumerate(dates):
+                if check_invalid_date(d):
+                    print(f"{d} is an invalid date.")
+                    sys.exit(0)  # end execution
+                dates[i] = get_time(d)
 
-        if int(opt) == 2:
-            print("ENDING EXECUTION")
-            time.sleep(3)
-            sys.exit(0)
+        elif "-unique_date" in chart_args:
+            ix = received_args.index("-unique_date")
+            date_for_pie = received_args[ix + 1]
+            if check_invalid_date(date_for_pie):
+                print(f"{date_for_pie} is an invalid date.")
+                sys.exit(0)  # end execution
+            date_for_pie = get_time(date_for_pie)
 
-        print("Alright\n")
-        # CHOSE A CHART
-        chosen_chart = ask_for_chart()
-        # if chosen chart is pie chart, then only one date needed
-        if chosen_chart == 3:
-            date_for_pie = ask_for_date()  # Ask only for one date
-            # dates[1] = date_for_pie
-            generate_chosen_chart(chosen_chart, end=date_for_pie)
-            generated = True
-        # CHOOSE DATES
-        if dates.count(None) == 2 and chosen_chart != 3:  # if dates is empty
-            start, end = ask_for_pair_of_dates()
+        else:
+            print(
+                """When invoquing --generate_charts you have to specify 
+                the date or dates of your charts"""
+            )
+            sys.exit(0)  # end execution
 
-            while not validate_pair_of_dates(start, end):
-                print("\nDates difference should be at least of 7 days\n")
-                start, end = ask_for_pair_of_dates()
+        network_basic_stats = load_network_basic_stats(net_stats_filename)
+        routing_nodes_stats = load_routing_nodes_stats(routing_stats_file)
+        big_nodes_stats = load_big_nodes_stats(big_stats_file)
 
-            dates[0] = start
-            dates[1] = end
+        # Cast date column of our dataframes from str to date time
+        network_basic_stats = cast_df_date(network_basic_stats)
+        routing_nodes_stats = cast_df_date(routing_nodes_stats)
+        big_nodes_stats = cast_df_date(big_nodes_stats)
 
-        elif chosen_chart != 3:  # already asked for dates before
-            print("Do you want to enter new dates?")
-            msg_2 = """
-            1. Yes
-            2. No\n\t
-            """
-            ans = input(msg_2)
-            while check_invalid_choice(ans, menu=True):
-                print("Invalid option, try again")
-                ans = input(msg_2)
-            if int(ans) == 1:
-                start, end = ask_for_pair_of_dates()
+        routing_nodes_stats = routing_nodes_stats.set_index("date", drop=False)
+        network_basic_stats = network_basic_stats.set_index("date", drop=False)
+        big_nodes_stats = big_nodes_stats.set_index("date", drop=False)
 
-                while not validate_pair_of_dates(start, end):
-                    print("\nDates difference should be at least of 7 days\n")
-                    start, end = ask_for_pair_of_dates()
+    dates_args = {
+        "-start_date",
+        "-end_date",
+        "unique_date",
+    }
 
-                dates[0] = start
-                dates[1] = end
+    chart_args = set(chart_args) - dates_args
+    possible_charts = {
+        "-area": 5,
+        "-total": 1,
+        "-average": 4,
+        "-pie": 3,
+        "-routing": 2,
+    }
 
-        if not generated:
-            print(dates)
-            generate_chosen_chart(chosen_chart, dates[0], dates[1])
+    for chart in chart_args:
+        generate_chosen_chart(
+            possible_charts[chart],
+            network_basic_stats,
+            routing_nodes_stats,
+            big_nodes_stats,
+            dates[0],
+            dates[1],
+        )
 
-        print("\nCharts generated successfuly!\n")
-        time.sleep(2)
+    print("\n\tDone! :)")
+    # menu = """
+    # Now, choose whether to generate charts:
+    # 1. Generate charts
+    # 2. Don't, end execution.\n\t
+    # """
+    # # Ask for option
+    # opt = input(menu)
 
-        opt = input(menu)
+    # while True:
+    #     generated = False
+    #     while check_invalid_choice(opt, menu=True):
+    #         print("Invalid option, try again")
+    #         opt = input(menu)
+
+    #     if int(opt) == 2:
+    #         print("ENDING EXECUTION")
+    #         time.sleep(3)
+    #         sys.exit(0)
+
+    #     print("Alright\n")
+    #     # CHOSE A CHART
+    #     chosen_chart = ask_for_chart()
+    #     # if chosen chart is pie chart, then only one date needed
+    #     if chosen_chart == 3:
+    #         date_for_pie = ask_for_date()  # Ask only for one date
+    #         # dates[1] = date_for_pie
+    #         generate_chosen_chart(
+    #             chosen_chart,
+    #             network_basic_stats,
+    #             routing_nodes_stats,
+    #             big_nodes_stats,
+    #             end=date_for_pie,
+    #         )
+    #         generated = True
+    #     # CHOOSE DATES
+    #     if dates.count(None) == 2 and chosen_chart != 3:  # if dates is empty
+    #         start, end = ask_for_pair_of_dates()
+
+    #         while not validate_pair_of_dates(start, end):
+    #             print("\nDates difference should be at least of 7 days\n")
+    #             start, end = ask_for_pair_of_dates()
+
+    #         dates[0] = start
+    #         dates[1] = end
+
+    #     elif chosen_chart != 3:  # already asked for dates before
+    #         print("Do you want to enter new dates?")
+    #         msg_2 = """
+    #         1. Yes
+    #         2. No\n\t
+    #         """
+    #         ans = input(msg_2)
+    #         while check_invalid_choice(ans, menu=True):
+    #             print("Invalid option, try again")
+    #             ans = input(msg_2)
+    #         if int(ans) == 1:
+    #             start, end = ask_for_pair_of_dates()
+
+    #             while not validate_pair_of_dates(start, end):
+    #                 print("\nDates difference should be at least of 7 days\n")
+    #                 start, end = ask_for_pair_of_dates()
+
+    #             dates[0] = start
+    #             dates[1] = end
+
+    #     if not generated:
+    #         print(dates)
+    #         generate_chosen_chart(
+    #             chosen_chart,
+    #             network_basic_stats,
+    #             routing_nodes_stats,
+    #             big_nodes_stats,
+    #             dates[0],
+    #             dates[1],
+    #         )
+
+    #     print("\nCharts generated successfuly!\n")
+    #     time.sleep(2)
+
+    #     opt = input(menu)
 
 
-main()
+if __name__ == "__main__":
+    main()

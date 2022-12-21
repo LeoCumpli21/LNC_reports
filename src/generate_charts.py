@@ -6,10 +6,9 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
 
-def get_time(date):
+def get_time(date: str) -> datetime:
     """
-    Returns a tuple (date_now, 28_days_ago)
-    representing current date and date 28 days ago
+    returns date in datetime type
     """
 
     # Using current time
