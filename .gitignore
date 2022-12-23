@@ -2,4 +2,5 @@ src/__pycache__
 src/credentials.json
 src/token.json
 src/drive_ids.txt
-data/raw
+# data/raw
+# charts/**
