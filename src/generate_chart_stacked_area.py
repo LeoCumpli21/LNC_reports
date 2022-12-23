@@ -23,7 +23,7 @@ def get_big_routing_nodes_data(big_nodes, date_ago, recent_date):
         date_ago = date_ago.strftime("%Y-%m-%d")
         # load networks graph
 
-        graph_file = f"data/processed/graphs/network_graph_{date_ago}.csv"
+        graph_file = f"../data/processed/graphs/network_graph_{date_ago}.csv"
 
         try:
             ln_graph = pd.read_csv(graph_file, index_col=0)

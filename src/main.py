@@ -193,7 +193,7 @@ def generate_chosen_chart(
             # Save figure
             s, e = start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
             f.savefig(
-                f"charts/total_stats/network_stats_{s}_to_{e}_{fe}.png",
+                f"../charts/total_stats/network_stats_{s}_to_{e}_{fe}.png",
                 facecolor="#033048",
             )
 
@@ -208,7 +208,7 @@ def generate_chosen_chart(
         s, e = start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
         # save
         f.savefig(
-            f"charts/total_stats/network_stats_{s}_to_{e}_btc_vs_usd.png",
+            f"../charts/total_stats/network_stats_{s}_to_{e}_btc_vs_usd.png",
             facecolor="#033048",
         )
 
@@ -233,7 +233,7 @@ def generate_chosen_chart(
             # Save figure to charts folder
             s, e = start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
             f.savefig(
-                f"charts/routing_vs_net_nodes/routing_nodes_stats_{s}_to_{e}_{fe[1]}.png",
+                f"../charts/routing_vs_net_nodes/routing_nodes_stats_{s}_to_{e}_{fe[1]}.png",
                 facecolor="#033048",
             )
 
@@ -242,7 +242,7 @@ def generate_chosen_chart(
         # Big nodes categories distribution pie chart
         # load big nodes description
         big_nodes = pd.read_csv(
-            "data/processed/basic_stats/big_nodes_desc.csv", index_col=0
+            "../data/processed/basic_stats/big_nodes_desc.csv", index_col=0
         )
         # Clean big nodes df, and get industrial nodes only (exlcuding routing nodes)
         big_nodes, industrial_nodes = clean_big_nodes(big_nodes)
@@ -254,7 +254,7 @@ def generate_chosen_chart(
         plot_big_nodes_distribution(f, categories_distr)
         # Save chart
         f.savefig(
-            f"charts/pie_charts/big_nodes_pie_{end}.png",
+            f"../charts/pie_charts/big_nodes_pie_{end}.png",
             facecolor="#033048",
         )
 
@@ -273,7 +273,7 @@ def generate_chosen_chart(
         plot_capacities_pie(f, ln_total_cap, rn_total_cap, big_total_cap)
         # Save figure
         f.savefig(
-            f"charts/pie_charts/capacity_distribution_{end}.png",
+            f"../charts/pie_charts/capacity_distribution_{end}.png",
             facecolor="#033048",
         )
 
@@ -288,7 +288,7 @@ def generate_chosen_chart(
         plot_nodes_categories(f, rn_count, rest_count, big_count)
         # Save figure
         f.savefig(
-            f"charts/pie_charts/share_nodes_pie_{end}.png",
+            f"../charts/pie_charts/share_nodes_pie_{end}.png",
             facecolor="#033048",
         )
 
@@ -306,7 +306,7 @@ def generate_chosen_chart(
         s, e = start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
         # Save chart
         f.savefig(
-            f"charts/average_stats/avg_node_capacity_{s}_to_{e}.png",
+            f"../charts/average_stats/avg_node_capacity_{s}_to_{e}.png",
             facecolor="#033048",
         )
 
@@ -325,7 +325,7 @@ def generate_chosen_chart(
         )
         # Save chart
         f.savefig(
-            f"charts/average_stats/avg_chan_size_{s}_to_{e}.png",
+            f"../charts/average_stats/avg_chan_size_{s}_to_{e}.png",
             facecolor="#033048",
         )
 
@@ -334,7 +334,7 @@ def generate_chosen_chart(
         # ago until recent
         # load big nodes description
         big_nodes = pd.read_csv(
-            "data/processed/basic_stats/big_nodes_desc.csv", index_col=0
+            "../data/processed/basic_stats/big_nodes_desc.csv", index_col=0
         )
         big_nodes, _ = clean_big_nodes(big_nodes)
         big_rn_capacities = get_big_routing_nodes_data(big_nodes, start, end)
@@ -355,7 +355,7 @@ def generate_chosen_chart(
         s, e = start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
 
         f.savefig(
-            f"charts/area_charts/stacked_area_chart_{s}_to_{e}.png",
+            f"../charts/area_charts/stacked_area_chart_{s}_to_{e}.png",
             facecolor="#033048",
         )
 
