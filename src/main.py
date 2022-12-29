@@ -238,7 +238,7 @@ def generate_chosen_chart(
             )
 
     elif choice == 3:  # PIE CHARTS
-
+        e = end.strftime("%Y-%m-%d")
         # Big nodes categories distribution pie chart
         # load big nodes description
         big_nodes = pd.read_csv(
@@ -254,7 +254,7 @@ def generate_chosen_chart(
         plot_big_nodes_distribution(f, categories_distr)
         # Save chart
         f.savefig(
-            f"../charts/pie_charts/big_nodes_pie_{end}.png",
+            f"../charts/pie_charts/big_nodes_pie_{e}.png",
             facecolor="#033048",
         )
 
@@ -273,7 +273,7 @@ def generate_chosen_chart(
         plot_capacities_pie(f, ln_total_cap, rn_total_cap, big_total_cap)
         # Save figure
         f.savefig(
-            f"../charts/pie_charts/capacity_distribution_{end}.png",
+            f"../charts/pie_charts/capacity_distribution_{e}.png",
             facecolor="#033048",
         )
 
@@ -288,7 +288,7 @@ def generate_chosen_chart(
         plot_nodes_categories(f, rn_count, rest_count, big_count)
         # Save figure
         f.savefig(
-            f"../charts/pie_charts/share_nodes_pie_{end}.png",
+            f"../charts/pie_charts/share_nodes_pie_{e}.png",
             facecolor="#033048",
         )
 
@@ -436,7 +436,7 @@ def main():
 
         # Get today's date in format <year-month-day>
         todays_date = datetime.now().strftime("%Y-%m-%d")
-        # todays_date = "2022-12-09"  ### THIS IS JUST FOR TESTING
+        # todays_date = "2022-12-10"  ### THIS IS JUST FOR TESTING
 
         curr_file_name = None
         for file in graph_files:
@@ -554,7 +554,7 @@ def main():
     dates_args = {
         "-start_date",
         "-end_date",
-        "unique_date",
+        "-unique_date",
     }
 
     chart_args = set(chart_args) - dates_args
@@ -567,14 +567,23 @@ def main():
     }
 
     for chart in chart_args:
-        generate_chosen_chart(
-            possible_charts[chart],
-            network_basic_stats,
-            routing_nodes_stats,
-            big_nodes_stats,
-            dates[0],
-            dates[1],
-        )
+        if chart != "-pie":
+            generate_chosen_chart(
+                possible_charts[chart],
+                network_basic_stats,
+                routing_nodes_stats,
+                big_nodes_stats,
+                dates[0],
+                dates[1],
+            )
+        else:
+            generate_chosen_chart(
+                possible_charts[chart],
+                network_basic_stats,
+                routing_nodes_stats,
+                big_nodes_stats,
+                end=date_for_pie,
+            )
 
     print("\n\tEnding Execution...")
     # menu = """
