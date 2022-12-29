@@ -3,4 +3,5 @@ src/credentials.json
 src/token.json
 src/drive_ids.txt
 data/raw
+data/processed/graphs
 charts/**
