@@ -8,13 +8,16 @@ def clean_big_nodes(df):
     returns (cleaned df, industrial nodes df without ruting nodes)
     """
 
-    df.drop(columns='Comment', axis=1, inplace=True)
-    df['type'] = df['type'].apply(lambda x: ' '.join([w.capitalize() for w in x.split()]))
-    df['type'] = df['type'].apply(lambda x: "Ln Wallet" if x == "Wallet" else x)
+    df.drop(columns="Comment", axis=1, inplace=True)
+    df["type"] = df["type"].apply(
+        lambda x: " ".join([w.capitalize() for w in x.split()])
+    )
+    df["type"] = df["type"].apply(lambda x: "Ln Wallet" if x == "Wallet" else x)
     # Get rid of category: "Routing Nodes"
-    industrial_nodes = df[df['type'] != "Routing Node"]
+    industrial_nodes = df[df["type"] != "Routing Node"]
 
     return df, industrial_nodes
+
 
 def get_big_nodes_distribution(df):
     """
@@ -25,11 +28,12 @@ def get_big_nodes_distribution(df):
 
     big_nodes_distr = df.type.to_dict()
     d_values = list(big_nodes_distr.values())
-    d = {k: d_values.count(k) for k in d_values} 
+    d = {k: d_values.count(k) for k in d_values}
     # d has the form {'node category': occurrences}
     key_value = d.items()
 
     return list(key_value)
+
 
 def plot_big_nodes_distribution(f, dist_list):
     """
@@ -44,32 +48,31 @@ def plot_big_nodes_distribution(f, dist_list):
 
     # f = plt.figure(figsize=(16,9))
     rc = {
-        'axes.grid' : True, # for horizontal lines for each y-axis point
-        'grid.color': '#436280',
-        'font.size': 20,
+        "axes.grid": True,  # for horizontal lines for each y-axis point
+        "grid.color": "#436280",
+        "font.size": 20,
     }
     plt.rcParams.update(rc)
 
-    # Set figure background to be transparent
-    f.patch.set_alpha(0)
     ax = f.add_subplot(111)
-    ax.patch.set_alpha(0)
+    # set figure background color
+    f.set_facecolor(color="#033048")
+    ax.set_facecolor(color="#033048")
     # Plotting the pie
     _, texts, autotexts = plt.pie(
-        [v[1] for v in dist_list], 
+        [v[1] for v in dist_list],
         labels=[k[0] for k in dist_list],
-        colors = ['#5D89B3', '#436280']*2,
-        autopct='%1.1f%%'
-    );
+        colors=["#5D89B3", "#436280"] * 2,
+        autopct="%1.1f%%",
+    )
     # for the text inside the pie
     for i, autotext in enumerate(autotexts):
-        if i< 4:
-            autotext.set_color('#FFFFFF')
+        if i < 4:
+            autotext.set_color("#FFFFFF")
     else:
-        autotext.set_color('black')
+        autotext.set_color("black")
     # for text of labels
     for text in texts:
-        text.set_color('#FFFFFF')
+        text.set_color("#FFFFFF")
 
     return
-
