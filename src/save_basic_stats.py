@@ -163,12 +163,12 @@ def save_routing_nodes_stats(filename_1, filename_2, todays_date):
     routing_nodes_stats.to_csv(filename_2)
 
 
-def save_big_nodes_stats(filename_1, filename_2, todays_date):
-    """
-    Reads graph and updates big nodes stats csv file
-
-    filename_1: network graph
-    filename_2: big nodes stats csv
+def save_big_nodes_stats(filename_1, filename_2, filename_3, todays_date):
+    """Reads graph and updates big nodes stats csv file
+    Args:
+        filename_1: network graph
+        filename_2: big nodes stats csv
+        filename_3: big nodes desc csv
     """
 
     ln_graph = pd.read_csv(filename_1, index_col=0)
@@ -185,3 +185,17 @@ def save_big_nodes_stats(filename_1, filename_2, todays_date):
     big_nodes_stats.loc[sh, :] = stats
     # Save stats
     big_nodes_stats.to_csv(filename_2)
+
+    # Update industrial nodes individual capacities
+    industrial_nodes = pd.read_csv(filename_3, index_col=0)
+    # industrial nodes pub keys
+    industrial_keys = industrial_nodes.loc[:, "pub_key"].values
+    # Get those nodes capacities
+    industrial_caps = ln_graph[ln_graph["pub_key"].isin(industrial_keys)][
+        ["pub_key", "alias", "total_capacity"]
+    ]
+    # update capacities
+    industrial_nodes["total_capacity"] = industrial_caps[
+        "total_capacity"
+    ].values
+    industrial_nodes.to_csv(filename_3)
