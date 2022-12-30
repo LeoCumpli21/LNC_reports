@@ -253,10 +253,6 @@ def generate_chosen_chart(
         # update capacities
         big_nodes["total_capacity"] = industrial_caps["total_capacity"].values
         print(big_nodes[["alias", "total_capacity"]])
-        # load big nodes description
-        # big_nodes = pd.read_csv(
-        #     "../data/processed/basic_stats/big_nodes_desc.csv", index_col=0
-        # )
         # Clean big nodes df, and get industrial nodes only (exlcuding routing nodes)
         big_nodes, industrial_nodes = clean_big_nodes(big_nodes)
         # Get big nodes categories distribution
