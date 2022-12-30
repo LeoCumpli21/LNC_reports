@@ -445,8 +445,8 @@ def main():
         graph_files = get_files(service, folder_id, team_id)
 
         # Get today's date in format <year-month-day>
-        # todays_date = datetime.now().strftime("%Y-%m-%d")
-        todays_date = "2022-12-28"  ### THIS IS JUST FOR TESTING
+        todays_date = datetime.now().strftime("%Y-%m-%d")
+        # todays_date = "2022-12-29"  ### THIS IS JUST FOR TESTING
 
         curr_file_name = None
         for file in graph_files:
