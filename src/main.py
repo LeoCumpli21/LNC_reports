@@ -180,6 +180,8 @@ def generate_chosen_chart(
     end: datetime = datetime.strptime(
         datetime.now().strftime("%Y-%m-%d"), "%Y-%m-%d"
     ),
+    ln_graph=None,
+    desc_file=None,
 ):
     f = None  # figure to show
     if choice == 1:  # TOTAL STATS CHARTS
@@ -240,10 +242,21 @@ def generate_chosen_chart(
     elif choice == 3:  # PIE CHARTS
         e = end.strftime("%Y-%m-%d")
         # Big nodes categories distribution pie chart
+        # Update industrial nodes individual capacities
+        big_nodes = pd.read_csv(desc_file, index_col=0)
+        # industrial nodes pub keys
+        industrial_keys = big_nodes.loc[:, "pub_key"].values
+        # Get those nodes capacities
+        industrial_caps = ln_graph[ln_graph["pub_key"].isin(industrial_keys)][
+            ["pub_key", "alias", "total_capacity"]
+        ]
+        # update capacities
+        big_nodes["total_capacity"] = industrial_caps["total_capacity"].values
+        print(big_nodes[["alias", "total_capacity"]])
         # load big nodes description
-        big_nodes = pd.read_csv(
-            "../data/processed/basic_stats/big_nodes_desc.csv", index_col=0
-        )
+        # big_nodes = pd.read_csv(
+        #     "../data/processed/basic_stats/big_nodes_desc.csv", index_col=0
+        # )
         # Clean big nodes df, and get industrial nodes only (exlcuding routing nodes)
         big_nodes, industrial_nodes = clean_big_nodes(big_nodes)
         # Get big nodes categories distribution
@@ -388,6 +401,7 @@ def main():
     net_stats_filename = "../data/processed/basic_stats/network_basic_stats.csv"
     routing_stats_file = "../data/processed/basic_stats/routing_nodes_stats.csv"
     big_stats_file = "../data/processed/basic_stats/big_nodes_stats.csv"
+    big_nodes_desc_file = "../data/processed/basic_stats/big_nodes_desc.csv"
     routing_nodes_stats = None
     network_basic_stats = None
     big_nodes_stats = None
@@ -435,8 +449,8 @@ def main():
         graph_files = get_files(service, folder_id, team_id)
 
         # Get today's date in format <year-month-day>
-        todays_date = datetime.now().strftime("%Y-%m-%d")
-        # todays_date = "2022-12-10"  ### THIS IS JUST FOR TESTING
+        # todays_date = datetime.now().strftime("%Y-%m-%d")
+        todays_date = "2022-12-28"  ### THIS IS JUST FOR TESTING
 
         curr_file_name = None
         for file in graph_files:
@@ -497,7 +511,9 @@ def main():
 
         ### BIG NODES stats
         # Save new big nodes stats
-        save_big_nodes_stats(net_csv, big_stats_file, todays_date)
+        save_big_nodes_stats(
+            net_csv, big_stats_file, big_nodes_desc_file, todays_date
+        )
 
         print("Done!")
         time.sleep(3)
@@ -577,95 +593,21 @@ def main():
                 dates[1],
             )
         else:
+            date = date_for_pie.strftime("%Y-%m-%d")
+            ln_graph = pd.read_csv(
+                f"../data/processed/graphs/network_graph_{date}.csv"
+            )
             generate_chosen_chart(
                 possible_charts[chart],
                 network_basic_stats,
                 routing_nodes_stats,
                 big_nodes_stats,
                 end=date_for_pie,
+                ln_graph=ln_graph,
+                desc_file=big_nodes_desc_file,
             )
 
     print("\n\tEnding Execution...")
-    # menu = """
-    # Now, choose whether to generate charts:
-    # 1. Generate charts
-    # 2. Don't, end execution.\n\t
-    # """
-    # # Ask for option
-    # opt = input(menu)
-
-    # while True:
-    #     generated = False
-    #     while check_invalid_choice(opt, menu=True):
-    #         print("Invalid option, try again")
-    #         opt = input(menu)
-
-    #     if int(opt) == 2:
-    #         print("ENDING EXECUTION")
-    #         time.sleep(3)
-    #         sys.exit(0)
-
-    #     print("Alright\n")
-    #     # CHOSE A CHART
-    #     chosen_chart = ask_for_chart()
-    #     # if chosen chart is pie chart, then only one date needed
-    #     if chosen_chart == 3:
-    #         date_for_pie = ask_for_date()  # Ask only for one date
-    #         # dates[1] = date_for_pie
-    #         generate_chosen_chart(
-    #             chosen_chart,
-    #             network_basic_stats,
-    #             routing_nodes_stats,
-    #             big_nodes_stats,
-    #             end=date_for_pie,
-    #         )
-    #         generated = True
-    #     # CHOOSE DATES
-    #     if dates.count(None) == 2 and chosen_chart != 3:  # if dates is empty
-    #         start, end = ask_for_pair_of_dates()
-
-    #         while not validate_pair_of_dates(start, end):
-    #             print("\nDates difference should be at least of 7 days\n")
-    #             start, end = ask_for_pair_of_dates()
-
-    #         dates[0] = start
-    #         dates[1] = end
-
-    #     elif chosen_chart != 3:  # already asked for dates before
-    #         print("Do you want to enter new dates?")
-    #         msg_2 = """
-    #         1. Yes
-    #         2. No\n\t
-    #         """
-    #         ans = input(msg_2)
-    #         while check_invalid_choice(ans, menu=True):
-    #             print("Invalid option, try again")
-    #             ans = input(msg_2)
-    #         if int(ans) == 1:
-    #             start, end = ask_for_pair_of_dates()
-
-    #             while not validate_pair_of_dates(start, end):
-    #                 print("\nDates difference should be at least of 7 days\n")
-    #                 start, end = ask_for_pair_of_dates()
-
-    #             dates[0] = start
-    #             dates[1] = end
-
-    #     if not generated:
-    #         print(dates)
-    #         generate_chosen_chart(
-    #             chosen_chart,
-    #             network_basic_stats,
-    #             routing_nodes_stats,
-    #             big_nodes_stats,
-    #             dates[0],
-    #             dates[1],
-    #         )
-
-    #     print("\nCharts generated successfuly!\n")
-    #     time.sleep(2)
-
-    #     opt = input(menu)
 
 
 if __name__ == "__main__":
