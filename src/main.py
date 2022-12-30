@@ -180,6 +180,8 @@ def generate_chosen_chart(
     end: datetime = datetime.strptime(
         datetime.now().strftime("%Y-%m-%d"), "%Y-%m-%d"
     ),
+    ln_graph=None,
+    desc_file=None,
 ):
     f = None  # figure to show
     if choice == 1:  # TOTAL STATS CHARTS
@@ -240,10 +242,21 @@ def generate_chosen_chart(
     elif choice == 3:  # PIE CHARTS
         e = end.strftime("%Y-%m-%d")
         # Big nodes categories distribution pie chart
+        # Update industrial nodes individual capacities
+        big_nodes = pd.read_csv(desc_file, index_col=0)
+        # industrial nodes pub keys
+        industrial_keys = big_nodes.loc[:, "pub_key"].values
+        # Get those nodes capacities
+        industrial_caps = ln_graph[ln_graph["pub_key"].isin(industrial_keys)][
+            ["pub_key", "alias", "total_capacity"]
+        ]
+        # update capacities
+        big_nodes["total_capacity"] = industrial_caps["total_capacity"].values
+        print(big_nodes[["alias", "total_capacity"]])
         # load big nodes description
-        big_nodes = pd.read_csv(
-            "../data/processed/basic_stats/big_nodes_desc.csv", index_col=0
-        )
+        # big_nodes = pd.read_csv(
+        #     "../data/processed/basic_stats/big_nodes_desc.csv", index_col=0
+        # )
         # Clean big nodes df, and get industrial nodes only (exlcuding routing nodes)
         big_nodes, industrial_nodes = clean_big_nodes(big_nodes)
         # Get big nodes categories distribution
@@ -388,6 +401,7 @@ def main():
     net_stats_filename = "../data/processed/basic_stats/network_basic_stats.csv"
     routing_stats_file = "../data/processed/basic_stats/routing_nodes_stats.csv"
     big_stats_file = "../data/processed/basic_stats/big_nodes_stats.csv"
+    big_nodes_desc_file = "../data/processed/basic_stats/big_nodes_desc.csv"
     routing_nodes_stats = None
     network_basic_stats = None
     big_nodes_stats = None
@@ -435,8 +449,8 @@ def main():
         graph_files = get_files(service, folder_id, team_id)
 
         # Get today's date in format <year-month-day>
-        todays_date = datetime.now().strftime("%Y-%m-%d")
-        # todays_date = "2022-12-10"  ### THIS IS JUST FOR TESTING
+        # todays_date = datetime.now().strftime("%Y-%m-%d")
+        todays_date = "2022-12-28"  ### THIS IS JUST FOR TESTING
 
         curr_file_name = None
         for file in graph_files:
@@ -497,7 +511,9 @@ def main():
 
         ### BIG NODES stats
         # Save new big nodes stats
-        save_big_nodes_stats(net_csv, big_stats_file, todays_date)
+        save_big_nodes_stats(
+            net_csv, big_stats_file, big_nodes_desc_file, todays_date
+        )
 
         print("Done!")
         time.sleep(3)
@@ -577,12 +593,18 @@ def main():
                 dates[1],
             )
         else:
+            date = date_for_pie.strftime("%Y-%m-%d")
+            ln_graph = pd.read_csv(
+                f"../data/processed/graphs/network_graph_{date}.csv"
+            )
             generate_chosen_chart(
                 possible_charts[chart],
                 network_basic_stats,
                 routing_nodes_stats,
                 big_nodes_stats,
                 end=date_for_pie,
+                ln_graph=ln_graph,
+                desc_file=big_nodes_desc_file,
             )
 
     print("\n\tEnding Execution...")
